@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ReplyHero</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --bg-soft: #e5e7eb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --subtext: #6b7280;
+      --border: #e5e7eb;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --bg-soft: #020617;
+      --card: #020617;
+      --text: #e5e7eb;
+      --subtext: #9ca3af;
+      --border: #1f2937;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.7);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #e5edff 0, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px 12px;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1120px;
+      display: flex;
+      gap: 16px;
+      position: relative;
+    }
+
+    /* Sidebar */
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      z-index: 20;
+    }
+
+    .sidebar-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 260px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px;
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .sidebar-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .sidebar-close {
+      border: none;
+      background: transparent;
+      color: var(--subtext);
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding-right: 4px;
+    }
+
+    .history-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .history-item:hover {
+      background: var(--bg-soft);
+      border-color: var(--border);
+    }
+
+    .history-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 6px;
+    }
+
+    .history-menu-btn {
+      border: none;
+      background: transparent;
+      color: var(--subtext);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 4px;
+    }
+
+    .sidebar-footer {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .btn-small {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--subtext);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* Main app */
+
+    .app {
+      flex: 1;
+      background: var(--card);
+      border-radius: 18px;
+      padding: 22px 22px 20px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .left-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-toggle {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 6px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+    }
+
+    .app-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .app-subtitle {
+      font-size: 0.85rem;
+      color: var(--subtext);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toggle-dark {
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    /* Mode + length controls */
+
+    .mode-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .segmented {
+      display: inline-flex;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 3px;
+    }
+
+    .segmented button {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--subtext);
+    }
+
+    .segmented button.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 0 0 1px var(--border);
+    }
+
+    .mode-label {
+      font-size: 0.8rem;
+      color: var(--subtext);
+    }
+
+    /* Input area */
+
+    .input-card {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .input-hint {
+      font-size: 0.8rem;
+      color: var(--subtext);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+    }
+
+    /* Tone + length row */
+
+    .options-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .select-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* Loading */
+
+    .loading {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--subtext);
+    }
+
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Output */
+
+    .output-section {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .output-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .output-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .output-subtitle {
+      font-size: 0.8rem;
+      color: var(--subtext);
+    }
+
+    .output-card {
+      border: 1px solid var(--border);
+      padding: 14px 12px 12px;
+      border-radius: 12px;
+      background: var(--bg);
+      position: relative;
+      font-size: 0.95rem;
+    }
+
+    .output-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      gap: 8px;
+    }
+
+    .output-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--subtext);
+    }
+
+    .copy-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .copy-btn.copied {
+      background: #16a34a;
+    }
+
+    /* Responsive */
+
+    @media (max-width: 768px) {
+      .app {
+        padding: 18px 16px 16px;
+      }
+      .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .mode-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .options-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">History</div>
+      <button class="sidebar-close" id="sidebarCloseBtn">&times;</button>
+    </div>
+    <div class="sidebar-list" id="historyList"></div>
+    <div class="sidebar-footer">
+      <button class="btn-small btn-outline" id="exportHistoryBtn">Export</button>
+      <button class="btn-small btn-outline-danger" id="clearHistoryBtn">Clear</button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <div class="app">
+      <div class="app-header">
+        <div class="left-header">
+          <button class="sidebar-toggle" id="sidebarToggle">
+            ☰ History
+          </button>
+          <div>
+            <div class="app-title">ReplyHero</div>
+            <div class="app-subtitle">Smart replies for real conversations.</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="toggle-dark" id="darkToggle">Dark mode</button>
+        </div>
+      </div>
+
+      <div class="mode-row">
+        <div>
+          <div class="mode-label">Mode</div>
+          <div class="segmented" id="modeSegment">
+            <button data-mode="reply" class="active">Generate Reply</button>
+            <button data-mode="rewrite">Rewrite My Reply</button>
+          </div>
+        </div>
+        <div>
+          <div class="mode-label">Reply length</div>
+          <div class="segmented" id="lengthSegment">
+            <button data-length="Short">Short</button>
+            <button data-length="Medium" class="active">Medium</button>
+            <button data-length="Long">Long</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-card">
+        <div class="input-label-row">
+          <div class="input-label" id="inputLabel">Paste your conversation</div>
+          <div class="input-hint" id="inputHint">
+            Include both sides so ReplyHero understands context.
+          </div>
+        </div>
+        <textarea id="conversation" placeholder="Coworker: Hey Marcie, quick question — were you able to finish the client summary from yesterday?
+Me: I made progress, but I’m still waiting on a few details from the sales team.
+Coworker: Okay, but the client is asking for it this afternoon. Can you send whatever you have so far?
+Me: I can, but it may be missing some key points without the sales updates.
+Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
+
+        <div class="options-row">
+          <div class="select-group">
+            <div class="mode-label">Tone</div>
+            <select id="tone">
+              <option value="professional">Professional Neutral</option>
+              <option value="formal">Formal</option>
+              <option value="warm">Warm</option>
+              <option value="direct">Direct</option>
+              <option value="executive">Executive</option>
+              <option value="empathetic">Empathetic</option>
+              <option value="customer-service">Customer‑Service</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" id="clearBtn">Clear</button>
+            <button class="btn-primary" id="generateBtn">
+              Generate replies
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        Crafting your replies…
+      </div>
+
+      <div class="output-section">
+        <div class="output-header-row">
+          <div>
+            <div class="output-title">Reply options</div>
+            <div class="output-subtitle">Three variations you can copy or tweak.</div>
+          </div>
+        </div>
+        <div id="output"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const conversationEl = document.getElementById("conversation");
+    const toneEl = document.getElementById("tone");
+    const outputEl = document.getElementById("output");
+    const loadingEl = document.getElementById("loading");
+    const darkToggle = document.getElementById("darkToggle");
+
+    const modeSegment = document.getElementById("modeSegment");
+    const lengthSegment = document.getElementById("lengthSegment");
+    const inputLabel = document.getElementById("inputLabel");
+    const inputHint = document.getElementById("inputHint");
+
+    const sidebar = document.getElementById("sidebar");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+    const historyList = document.getElementById("historyList");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    const exportHistoryBtn = document.getElementById("exportHistoryBtn");
+
+    let currentMode = "reply";   // "reply" or "rewrite"
+    let currentLength = "Medium"; // "Short" | "Medium" | "Long"
+
+    const HISTORY_KEY = "replyhero_history_v1";
+
+    function loadTheme() {
+      const saved = localStorage.getItem("replyhero_theme");
+      if (saved === "dark") {
+        document.body.classList.add("dark");
+      }
+    }
+
+    function saveTheme() {
+      const isDark = document.body.classList.contains("dark");
+      localStorage.setItem("replyhero_theme", isDark ? "dark" : "light");
+    }
+
+    darkToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      saveTheme();
+    });
+
+    loadTheme();
+
+    function updateModeUI() {
+      const buttons = modeSegment.querySelectorAll("button");
+      buttons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === currentMode);
+      });
+
+      if (currentMode === "reply") {
+        inputLabel.textContent = "Paste your conversation";
+        inputHint.textContent = "Include both sides so ReplyHero understands context.";
+        conversationEl.placeholder = "Coworker: Hey Marcie, quick question — were you able to finish the client summary from yesterday?\nMe: I made progress, but I’m still waiting on a few details from the sales team.\nCoworker: Okay, but the client is asking for it this afternoon. Can you send whatever you have so far?\nMe: I can, but it may be missing some key points without the sales updates.\nCoworker: That’s fine. Just send the draft as soon as you can.";
+      } else {
+        inputLabel.textContent = "Paste your draft reply";
+        inputHint.textContent = "ReplyHero will rewrite it using the selected tone and length.";
+        conversationEl.placeholder = "Hi [Name],\n\nI’m writing to follow up on...";
+      }
+    }
+
+    modeSegment.addEventListener("click", (e) => {
+      if (e.target.tagName !== "BUTTON") return;
+      currentMode = e.target.dataset.mode;
+      updateModeUI();
+    });
+
+    function updateLengthUI() {
+      const buttons = lengthSegment.querySelectorAll("button");
+      buttons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.length === currentLength);
+      });
+    }
+
+    lengthSegment.addEventListener("click", (e) => {
+      if (e.target.tagName !== "BUTTON") return;
+      currentLength = e.target.dataset.length;
+      updateLengthUI();
+    });
+
+    updateModeUI();
+    updateLengthUI();
+
+    function openSidebar() {
+      sidebar.classList.add("open");
+      sidebarBackdrop.classList.add("visible");
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove("open");
+      sidebarBackdrop.classList.remove("visible");
+    }
+
+    sidebarToggle.addEventListener("click", openSidebar);
+    sidebarCloseBtn.addEventListener("click", closeSidebar);
+    sidebarBackdrop.addEventListener("click", closeSidebar);
+
+    function getHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        return JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory(history) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function autoTitleFromText(text) {
+      const firstLine = text.split("\n")[0] || "";
+      const words = firstLine.trim().split(/\s+/).slice(0, 8).join(" ");
+      return words || "Untitled conversation";
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      historyList.innerHTML = "";
+
+      if (history.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.fontSize = "0.85rem";
+        empty.style.color = "var(--subtext)";
+        empty.textContent = "No conversations yet.";
+        historyList.appendChild(empty);
+        return;
+      }
+
+      history.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const titleSpan = document.createElement("div");
+        titleSpan.className = "history-title";
+        titleSpan.textContent = item.title || autoTitleFromText(item.conversation);
+
+        const menuBtn = document.createElement("button");
+        menuBtn.className = "history-menu-btn";
+        menuBtn.textContent = "⋮";
+
+        row.appendChild(titleSpan);
+        row.appendChild(menuBtn);
+
+        row.addEventListener("click", (e) => {
+          if (e.target === menuBtn) return;
+          conversationEl.value = item.conversation;
+          toneEl.value = item.tone || "professional";
+          currentMode = item.mode || "reply";
+          currentLength = item.length || "Medium";
+          updateModeUI();
+          updateLengthUI();
+          closeSidebar();
+          outputEl.innerHTML = "";
+        });
+
+        menuBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = prompt("Type 'rename' to rename, 'delete' to remove this conversation:");
+          if (!action) return;
+          if (action.toLowerCase() === "rename") {
+            const newTitle = prompt("New name for this conversation:", item.title || autoTitleFromText(item.conversation));
+            if (newTitle && newTitle.trim()) {
+              const historyNow = getHistory();
+              historyNow[index].title = newTitle.trim();
+              saveHistory(historyNow);
+              renderHistory();
+            }
+          } else if (action.toLowerCase() === "delete") {
+            const historyNow = getHistory();
+            historyNow.splice(index, 1);
+            saveHistory(historyNow);
+            renderHistory();
+          }
+        });
+
+        historyList.appendChild(row);
+      });
+    }
+
+    renderHistory();
+
+    clearHistoryBtn.addEventListener("click", () => {
+      if (!confirm("Clear all saved conversations?")) return;
+      saveHistory([]);
+      renderHistory();
+    });
+
+    exportHistoryBtn.addEventListener("click", () => {
+      const history = getHistory();
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "replyhero-history.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    function saveCurrentToHistory(conversation, tone, mode, length, replies) {
+      const history = getHistory();
+      history.unshift({
+        id: Date.now(),
+        title: autoTitleFromText(conversation),
+        conversation,
+        tone,
+        mode,
+        length,
+        replies
+      });
+      if (history.length > 50) history.pop();
+      saveHistory(history);
+      renderHistory();
+    }
+
+    async function generateReplies() {
+      const conversation = conversationEl.value.trim();
+      const tone = toneEl.value;
+
+      if (!conversation) return;
+
+      outputEl.innerHTML = "";
+      loadingEl.style.display = "block";
+
+      const replies = [];
+
+      try {
+        for (let i = 0; i < 3; i++) {
+          const res = await fetch("http://127.0.0.1:5000/reply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conversation,
+              tone,
+              rewrite: currentMode === "rewrite",
+              length: currentLength
+            })
+          });
+
+          const data = await res.json();
+          if (data.reply) {
+            replies.push(data.reply);
+          } else {
+            replies.push("Error: No reply returned from server.");
+          }
+        }
+      } catch (err) {
+        replies.length = 0;
+        replies.push("Error: Could not reach ReplyHero backend.");
+      }
+
+      loadingEl.style.display = "none";
+      outputEl.innerHTML = "";
+
+      replies.forEach((reply, index) => {
+        const card = document.createElement("div");
+        card.className = "output-card";
+
+        const header = document.createElement("div");
+        header.className = "output-card-header";
+
+        const label = document.createElement("div");
+        label.className = "output-label";
+        label.textContent = `Option ${index + 1}`;
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "copy-btn";
+        copyBtn.textContent = "Copy";
+
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(reply);
+            copyBtn.textContent = "Copied";
+            copyBtn.classList.add("copied");
+            setTimeout(() => {
+              copyBtn.textContent = "Copy";
+              copyBtn.classList.remove("copied");
+            }, 1200);
+          } catch {
+            alert("Could not copy to clipboard.");
+          }
+        });
+
+        header.appendChild(label);
+        header.appendChild(copyBtn);
+
+        const body = document.createElement("div");
+        body.textContent = reply;
+
+        card.appendChild(header);
+        card.appendChild(body);
+        outputEl.appendChild(card);
+      });
+
+      saveCurrentToHistory(conversation, tone, currentMode, currentLength, replies);
+    }
+
+    document.getElementById("generateBtn").addEventListener("click", generateReplies);
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      conversationEl.value = "";
+      outputEl.innerHTML = "";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReplyHero Mobile</title>
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f5f5f7;
+    --border: #e0e0e0;
+    --text: #1a1a1a;
+    --text-soft: #555;
+    --accent: #4a90e2;
+    --accent-soft: #e8f1fc;
+    --accent-strong: #1f6acb;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+  }
+
+  .container {
+    max-width: 480px;
+    margin: auto;
+    padding: 16px;
+  }
+
+  h2 {
+    margin-top: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pill-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pill-toggle .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.theme-select {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+  textarea {
+    width: 100%;
+    height: 160px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    resize: none;
+    outline: none;
+  }
+
+  .section {
+    margin-top: 24px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .toggle-label {
+    font-size: 14px;
+    color: var(--text-soft);
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 46px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .toggle-switch::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: 0.2s;
+  }
+
+  .toggle-switch.on {
+    background: var(--accent);
+  }
+
+  .toggle-switch.on::after {
+    transform: translateX(22px);
+  }
+
+  select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .primary-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.2s;
+  }
+
+  .primary-btn.pulsing {
+    animation: pulse 0.4s ease;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.96); }
+    100% { transform: scale(1); }
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Replies */
+  .reply-list {
+    margin-top: 16px;
+  }
+
+  .reply-item {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .reply-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-soft);
+    margin-bottom: 6px;
+  }
+
+  .badge {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+  }
+
+  .copy-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border: 1px solid var(--accent);
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+
+  .copy-btn:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+
+body.dark {
+  --bg: #0f0f0f;
+  --bg-soft: #1a1a1a;
+  --border: #333;
+  --text: #f5f5f5;
+  --text-soft: #bbb;
+}
+
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <h2>ReplyHero Mobile</h2>
+
+  <div class="header-controls">
+    <button id="themeToggle" class="pill-toggle" type="button">
+      <span class="dot"></span>
+      <span class="label">Light</span>
+    </button>
+    <select id="accentSelect" class="theme-select">
+      <option value="blue">Blue</option>
+      <option value="teal">Teal</option>
+      <option value="amber">Amber</option>
+  </select>
+  </div>
+  <textarea id="conversationInput" placeholder="Paste customer message here..."></textarea>
+
+  <div class="section">
+    <div class="toggle-row">
+      <span class="toggle-label">Rewrite Mode</span>
+      <div id="rewriteToggle" class="toggle-switch"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <label>Tone</label>
+    <select id="toneSelect">
+      <option value="Professional">Professional</option>
+      <option value="Friendly">Friendly</option>
+      <option value="Empathetic">Empathetic</option>
+      <option value="Direct">Direct</option>
+    </select>
+
+    <label>Length</label>
+    <select id="lengthSelect">
+      <option value="Short">Short</option>
+      <option value="Medium">Medium</option>
+      <option value="Long">Long</option>
+    </select>
+  </div>
+
+  <button id="generateBtn" class="primary-btn" type="button">
+    <span class="icon" id="generateIcon">✨</span>
+    <span id="generateText">Generate Reply</span>
+  </button>
+
+  <div id="replyList" class="reply-list"></div>
+
+  <button id="clearRepliesBtn"
+    style="margin-top:10px; width:100%; padding:8px; border-radius:10px; border:1px solid var(--border); background:var(--bg-soft); color:var(--text-soft); font-size:12px; cursor:pointer;">
+    Clear Replies
+  </button>
+
+</div>
+
+<script>
+  // Toggle logic
+  const rewriteToggle = document.getElementById("rewriteToggle");
+  let rewriteOn = false;
+
+  rewriteToggle.addEventListener("click", () => {
+    rewriteOn = !rewriteOn;
+    rewriteToggle.classList.toggle("on", rewriteOn);
+  });
+
+  // Replies
+  const generateBtn = document.getElementById("generateBtn");
+  const replyList = document.getElementById("replyList");
+  const toneSelect = document.getElementById("toneSelect");
+  const lengthSelect = document.getElementById("lengthSelect");
+
+const themeToggle = document.getElementById("themeToggle");
+const accentSelect = document.getElementById("accentSelect");
+
+let darkMode = false;
+
+themeToggle.addEventListener("click", () => {
+  darkMode = !darkMode;
+  document.body.classList.toggle("dark", darkMode);
+  themeToggle.querySelector(".label").textContent = darkMode ? "Dark" : "Light";
+});
+
+accentSelect.addEventListener("change", () => {
+  const val = accentSelect.value;
+
+  if (val === "blue") {
+    document.documentElement.style.setProperty("--accent", "#4a90e2");
+    document.documentElement.style.setProperty("--accent-soft", "#e8f1fc");
+    document.documentElement.style.setProperty("--accent-strong", "#1f6acb");
+  }
+  if (val === "teal") {
+    document.documentElement.style.setProperty("--accent", "#2bb3a3");
+    document.documentElement.style.setProperty("--accent-soft", "#dff7f4");
+    document.documentElement.style.setProperty("--accent-strong", "#1d7f73");
+  }
+  if (val === "amber") {
+    document.documentElement.style.setProperty("--accent", "#ffb300");
+    document.documentElement.style.setProperty("--accent-soft", "#fff4d6");
+    document.documentElement.style.setProperty("--accent-strong", "#cc8f00");
+  }
+});
+
+  // Loading animation helpers
+  function startLoading() {
+    generateBtn.disabled = true;
+    generateIcon.innerHTML = "";
+    generateIcon.classList.add("spinner");
+    generateText.textContent = "Generating...";
+  }
+
+  function stopLoading() {
+    generateBtn.disabled = false;
+    generateIcon.classList.remove("spinner");
+    generateIcon.innerHTML = "✨";
+    generateText.textContent = "Generate Reply";
+  }
+
+  // Add reply with copy button
+  function addReply(text, meta) {
+    const item = document.createElement("div");
+    item.className = "reply-item";
+
+    const metaRow = document.createElement("div");
+    metaRow.className = "reply-meta";
+
+    const left = document.createElement("span");
+    left.textContent = meta;
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = "AI Reply";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.textContent = "Copy";
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+    });
+
+    metaRow.appendChild(left);
+    metaRow.appendChild(badge);
+    metaRow.appendChild(copyBtn);
+
+    const body = document.createElement("div");
+    body.className = "reply-body";
+    body.textContent = text;
+
+    item.appendChild(metaRow);
+    item.appendChild(body);
+
+    replyList.prepend(item);
+  }
+
+  // Clear replies
+  document.getElementById("clearRepliesBtn").addEventListener("click", () => {
+    replyList.innerHTML = "";
+  });
+
+  // Generate reply
+  async function generateReply() {
+    startLoading();
+
+    const tone = toneSelect.value;
+    const length = lengthSelect.value;
+    const mode = rewriteOn ? "rewrite" : "generate";
+
+    generateBtn.classList.remove("pulsing");
+    void generateBtn.offsetWidth;
+    generateBtn.classList.add("pulsing");
+
+    let replyText = "";
+    try {
+      const res = await fetch("http://127.0.0.1:5000/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation: document.getElementById("conversationInput").value.trim(),
+          tone,
+          rewrite: mode === "rewrite",
+          length
+        })
+      });
+
+      const data = await res.json();
+      replyText = data.reply || "Error: No reply returned from server.";
+    } catch (err) {
+      replyText = "Error: Could not reach ReplyHero backend.";
+    }
+
+    const metaLabel = `${tone} · ${length} · ${
+      mode === "rewrite" ? "Rewrite" : "New reply"
+    }`;
+
+    addReply(replyText, metaLabel);
+
+    stopLoading();
+  }
+
+  generateBtn.addEventListener("click", () => {
+    generateReply().catch(console.error);
+  });
+</script>
+
+</body>
+</html>
