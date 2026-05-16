@@ -1,19 +1,167 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from openai import OpenAI
-import os
 from dotenv import load_dotenv
+import os
+import secrets
 
+def generate_api_key():
+    return secrets.token_hex(32)  # 64‑character key
+
+# Load environment variables FIRST
 load_dotenv()
 
+# ---------------------------------------
+# Database Setup (PostgreSQL + SQLAlchemy)
+# ---------------------------------------
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
+from datetime import datetime
+from passlib.hash import bcrypt   # ⭐ Needed for password hashing
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# ---------------------------------------
+# Flask App Setup
+# ---------------------------------------
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
+
+# ---------------------------------------
+# User Model
+# ---------------------------------------
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    api_key_hash = Column(String)
+    plan = Column(String, default="free")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+Base.metadata.create_all(bind=engine)
+
+# Enable CORS
 CORS(app)
 
+# OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# ---------------------------------------
+# Helper: Get Current User
+# ---------------------------------------
+def get_current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    db = SessionLocal()
+    return db.query(User).get(user_id)
 
+# ---------------------------------------
+# Signup Route
+# ---------------------------------------
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    db = SessionLocal()
+    existing = db.query(User).filter_by(email=email).first()
+    if existing:
+        return jsonify({"error": "Email already registered"}), 400
+
+    user = User(
+        email=email,
+        password_hash=bcrypt.hash(password)
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    session["user_id"] = user.id
+    return jsonify({"message": "Signup successful"})
+
+# ---------------------------------------
+# Login Route
+# ---------------------------------------
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    db = SessionLocal()
+    user = db.query(User).filter_by(email=email).first()
+
+    if not user or not bcrypt.verify(password, user.password_hash):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    session["user_id"] = user.id
+    return jsonify({"message": "Login successful"})
+
+# ---------------------------------------
+# route to generate/regenerate API key
+# ---------------------------------------
+@app.route("/generate_api_key", methods=["POST"])
+def generate_api_key_route():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    db = SessionLocal()
+
+    # Generate new key
+    new_key = generate_api_key()
+    hashed_key = bcrypt.hash(new_key)
+
+    # Save hashed key
+    user.api_key_hash = hashed_key
+    db.commit()
+
+    # Return the *plain* key ONCE
+    return jsonify({
+        "api_key": new_key,
+        "message": "Store this key securely. You will not see it again."
+    })
+
+# ---------------------------------------
+# Add API key authentication helper
+# ---------------------------------------
+def get_user_by_api_key(provided_key):
+    if not provided_key:
+        return None
+
+    db = SessionLocal()
+    users = db.query(User).all()
+
+    for user in users:
+        if user.api_key_hash and bcrypt.verify(provided_key, user.api_key_hash):
+            return user
+
+    return None
+
+# ---------------------------------------
+# Protected Reply Route
+# ---------------------------------------
 @app.route("/reply", methods=["POST"])
 def reply():
+    # 1. Try session authentication
+    user = get_current_user()
+
+    # 2. If no session, try API key
+    if not user:
+        api_key = request.headers.get("X-API-Key")
+        user = get_user_by_api_key(api_key)
+
+    # 3. If still no user → reject
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
     data = request.get_json()
 
     conversation = data.get("conversation", "").strip()
@@ -73,6 +221,9 @@ Rules:
 
     return jsonify({"reply": reply_text})
 
-
+# ---------------------------------------
+# Run App (local only)
+# ---------------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
