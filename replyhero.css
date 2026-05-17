@@ -491,4 +491,96 @@ select {
     flex-direction: column;
     align-items: flex-start;
   }
+/* ============================
+   ⭐ FULL RESPONSIVE UPGRADE
+   ============================ */
+
+@media (max-width: 768px) {
+
+  body {
+    padding: 12px;
+  }
+
+  .shell {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app {
+    padding: 16px 14px;
+  }
+
+  /* Header stacks */
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .left-header {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Login bar stacks vertically */
+  .login-bar,
+  .login-bar input,
+  .login-bar button {
+    width: 100%;
+  }
+
+  .login-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px !important;
+  }
+
+  /* Mode + length controls stack */
+  .mode-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  /* Tone + generate button stack */
+  .options-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .select-group {
+    width: 100%;
+  }
+
+  select {
+    width: 100%;
+  }
+
+  #generateBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Textarea full width */
+  textarea {
+    min-height: 180px;
+  }
+
+  /* Output cards full width */
+  .output-card {
+    font-size: 0.9rem;
+  }
+
+  /* Sidebar covers full screen */
+  .sidebar {
+    width: 85%;
+    max-width: 320px;
+  }
+
+  .sidebar-toggle {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+}
 }
