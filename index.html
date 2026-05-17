@@ -910,11 +910,19 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
           });
 
           const data = await res.json();
+
+          // ⭐ NEW: handle free‑limit reached
+          if (data.error === "limit_reached") {
+            replies.push(data.message);
+            return;
+          }
+
           if (data.reply) {
             replies.push(data.reply);
           } else {
             replies.push("Error: No reply returned from server.");
           }
+
         }
       } catch (err) {
         replies.length = 0;

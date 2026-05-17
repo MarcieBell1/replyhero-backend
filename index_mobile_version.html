@@ -465,7 +465,15 @@
       });
 
       const data = await res.json();
-      replyText = data.reply || "Error: No reply returned from server.";
+
+if (data.error === "limit_reached") {
+  alert(data.message);
+  stopLoading();
+  return;
+}
+
+replyText = data.reply || "Error: No reply returned from server.";
+
     } catch (err) {
       replyText = "Error: Could not reach ReplyHero backend.";
     }

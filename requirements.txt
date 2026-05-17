@@ -3,3 +3,7 @@ gunicorn
 python-dotenv
 flask-cors
 openai
+SQLAlchemy
+psycopg2-binary
+passlib[bcrypt]
+flask-session
