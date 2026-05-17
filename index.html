@@ -504,6 +504,7 @@
 </head>
 
 <body>
+
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <div class="sidebar" id="sidebar">
@@ -520,6 +521,7 @@
 
   <div class="shell">
     <div class="app">
+
       <div class="app-header">
         <div class="left-header">
           <button class="sidebar-toggle" id="sidebarToggle">
@@ -533,6 +535,25 @@
         <div class="header-right">
           <button class="toggle-dark" id="darkToggle">Dark mode</button>
         </div>
+      </div>
+
+      <!-- ⭐ LOGIN BAR MOVED INSIDE APP CONTAINER -->
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <input id="email"
+               type="email"
+               placeholder="Email"
+               style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text);" />
+
+        <input id="password"
+               type="password"
+               placeholder="Password"
+               style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text);" />
+
+        <button onclick="loginUser()"
+                class="btn-primary"
+                style="white-space:nowrap;">
+          Login
+        </button>
       </div>
 
       <div class="mode-row">
@@ -570,17 +591,28 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
           <div class="select-group">
             <div class="mode-label">Tone</div>
             <select id="tone">
-              <option value="professional">Professional Neutral</option>
+              <option value="professional">Professional</option>
               <option value="formal">Formal</option>
               <option value="warm">Warm</option>
               <option value="direct">Direct</option>
               <option value="executive">Executive</option>
               <option value="empathetic">Empathetic</option>
               <option value="customer-service">Customer‑Service</option>
+              <option value="friendly">Friendly</option>
+              <option value="flirty">Flirty</option>
+              <option value="assertive">Assertive</option>
+              <option value="casual">Casual</option>
+              <option value="apologetic">Apologetic</option>
+              <option value="enthusiastic">Enthusiastic</option>
+              <option value="supportive">Supportive</option>
+              <option value="sarcastic">Sarcastic</option>
+              <option value="humorous">Humorous</option>
+              <option value="romantic">Romantic</option>
+              <option value="motivational">Motivational</option>
+              <option value="stern">Stern</option>
             </select>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn-secondary" id="clearBtn">Clear</button>
             <button class="btn-primary" id="generateBtn">
               Generate replies
             </button>
@@ -606,6 +638,29 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
   </div>
 
   <script>
+    /* ⭐ LOGIN FUNCTION ADDED */
+    async function loginUser() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const response = await fetch("https://replyhero-backend.onrender.com/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      console.log("Login:", data);
+
+      if (data.message === "Login successful") {
+        alert("Logged in!");
+      } else {
+        alert("Login failed: " + (data.error || "Unknown error"));
+      }
+    }
+
+    /* ⭐ EXISTING APP LOGIC */
     const conversationEl = document.getElementById("conversation");
     const toneEl = document.getElementById("tone");
     const outputEl = document.getElementById("output");
@@ -625,8 +680,8 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
     const clearHistoryBtn = document.getElementById("clearHistoryBtn");
     const exportHistoryBtn = document.getElementById("exportHistoryBtn");
 
-    let currentMode = "reply";   // "reply" or "rewrite"
-    let currentLength = "Medium"; // "Short" | "Medium" | "Long"
+    let currentMode = "reply";
+    let currentLength = "Medium";
 
     const HISTORY_KEY = "replyhero_history_v1";
 
@@ -658,7 +713,12 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
       if (currentMode === "reply") {
         inputLabel.textContent = "Paste your conversation";
         inputHint.textContent = "Include both sides so ReplyHero understands context.";
-        conversationEl.placeholder = "Coworker: Hey Marcie, quick question — were you able to finish the client summary from yesterday?\nMe: I made progress, but I’m still waiting on a few details from the sales team.\nCoworker: Okay, but the client is asking for it this afternoon. Can you send whatever you have so far?\nMe: I can, but it may be missing some key points without the sales updates.\nCoworker: That’s fine. Just send the draft as soon as you can.";
+        conversationEl.placeholder =
+          "Coworker: Hey Marcie, quick question — were you able to finish the client summary from yesterday?\n" +
+          "Me: I made progress, but I’m still waiting on a few details from the sales team.\n" +
+          "Coworker: Okay, but the client is asking for it this afternoon. Can you send whatever you have so far?\n" +
+          "Me: I can, but it may be missing some key points without the sales updates.\n" +
+          "Coworker: That’s fine. Just send the draft as soon as you can.";
       } else {
         inputLabel.textContent = "Paste your draft reply";
         inputHint.textContent = "ReplyHero will rewrite it using the selected tone and length.";
@@ -823,6 +883,7 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
       renderHistory();
     }
 
+    /* ⭐ UPDATED generateReplies() WITH credentials: "include" */
     async function generateReplies() {
       const conversation = conversationEl.value.trim();
       const tone = toneEl.value;
@@ -836,8 +897,9 @@ Coworker: That’s fine. Just send the draft as soon as you can."></textarea>
 
       try {
         for (let i = 0; i < 3; i++) {
-          const res = await fetch("http://127.0.0.1:5000/reply", {
+          const res = await fetch("https://replyhero-backend.onrender.com/reply", {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               conversation,
