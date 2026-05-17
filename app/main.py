@@ -40,7 +40,10 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
 # Enable CORS (allow cookies)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, origins=[
+    "https://cute-melomakarona-3312b6.netlify.app"
+])
+
 
 # ---------------------------------------
 # User Model
