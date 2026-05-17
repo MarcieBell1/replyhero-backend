@@ -4,19 +4,24 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import secrets
+from datetime import datetime
 
+# ---------------------------------------
+# Load environment variables FIRST
+# ---------------------------------------
+load_dotenv()
+
+# ---------------------------------------
+# Helper: Generate API Key
+# ---------------------------------------
 def generate_api_key():
     return secrets.token_hex(32)  # 64‑character key
-
-# Load environment variables FIRST
-load_dotenv()
 
 # ---------------------------------------
 # Database Setup (PostgreSQL + SQLAlchemy)
 # ---------------------------------------
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
-from datetime import datetime
 from passlib.hash import bcrypt   # ⭐ Needed for password hashing
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -30,6 +35,9 @@ Base = declarative_base()
 # ---------------------------------------
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
+
+# Enable CORS (allow cookies)
+CORS(app, supports_credentials=True)
 
 # ---------------------------------------
 # User Model
@@ -45,14 +53,13 @@ class User(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# Enable CORS
-CORS(app)
-
+# ---------------------------------------
 # OpenAI client
+# ---------------------------------------
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ---------------------------------------
-# Helper: Get Current User
+# Helper: Get Current User (Session)
 # ---------------------------------------
 def get_current_user():
     user_id = session.get("user_id")
@@ -105,32 +112,15 @@ def login():
     return jsonify({"message": "Login successful"})
 
 # ---------------------------------------
-# route to generate/regenerate API key
+# Logout Route
 # ---------------------------------------
-@app.route("/generate_api_key", methods=["POST"])
-def generate_api_key_route():
-    user = get_current_user()
-    if not user:
-        return jsonify({"error": "Authentication required"}), 401
-
-    db = SessionLocal()
-
-    # Generate new key
-    new_key = generate_api_key()
-    hashed_key = bcrypt.hash(new_key)
-
-    # Save hashed key
-    user.api_key_hash = hashed_key
-    db.commit()
-
-    # Return the *plain* key ONCE
-    return jsonify({
-        "api_key": new_key,
-        "message": "Store this key securely. You will not see it again."
-    })
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out"})
 
 # ---------------------------------------
-# Add API key authentication helper
+# API Key Authentication Helper
 # ---------------------------------------
 def get_user_by_api_key(provided_key):
     if not provided_key:
@@ -144,6 +134,28 @@ def get_user_by_api_key(provided_key):
             return user
 
     return None
+
+# ---------------------------------------
+# Generate / Regenerate API Key
+# ---------------------------------------
+@app.route("/generate_api_key", methods=["POST"])
+def generate_api_key_route():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    db = SessionLocal()
+
+    new_key = generate_api_key()
+    hashed_key = bcrypt.hash(new_key)
+
+    user.api_key_hash = hashed_key
+    db.commit()
+
+    return jsonify({
+        "api_key": new_key,
+        "message": "Store this key securely. You will not see it again."
+    })
 
 # ---------------------------------------
 # Protected Reply Route
@@ -172,14 +184,14 @@ def reply():
     if not conversation:
         return jsonify({"error": "Conversation is required."}), 400
 
-    # ⭐ FINAL length rules (no duplicates)
+    # Length rules
     length_instruction = {
         "Short": "Keep the reply to 1 short sentence.",
         "Medium": "Write a reply that is 2–3 sentences long.",
         "Long": "Write a detailed reply that is 4–6 sentences long."
     }.get(length, "Write a concise reply.")
 
-    # ⭐ Rewrite vs Generate
+    # Rewrite vs Generate
     if rewrite_mode:
         user_instruction = (
             "Rewrite the user's draft reply using the selected tone. "
@@ -191,7 +203,7 @@ def reply():
             "Respond as if you are the user, writing a single reply message."
         )
 
-    # ⭐ System prompt
+    # System prompt
     system_prompt = f"""
 You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
 
@@ -207,7 +219,7 @@ Rules:
 - Return only the reply text.
 """
 
-    # ⭐ Call OpenAI
+    # Call OpenAI
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -222,7 +234,7 @@ Rules:
     return jsonify({"reply": reply_text})
 
 # ---------------------------------------
-# Run App (local only)
+# Run App (Render-compatible)
 # ---------------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
