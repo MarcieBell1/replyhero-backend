@@ -5,11 +5,14 @@ from dotenv import load_dotenv
 import os
 import secrets
 from datetime import datetime
+import stripe  # ⭐ ADD THIS
 
 # ---------------------------------------
 # Load environment variables FIRST
 # ---------------------------------------
 load_dotenv()
+
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # ⭐ ADD THIS
 
 # ---------------------------------------
 # Helper: Generate API Key
@@ -49,6 +52,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     api_key_hash = Column(String)
     plan = Column(String, default="free")
+    free_uses = Column(Integer, default=0)  # ⭐ NEW: track how many free replies used
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -174,6 +178,21 @@ def reply():
     if not user:
         return jsonify({"error": "Authentication required"}), 401
 
+    # ---------------------------------------
+    # ⭐ Free usage limit: 7 total for free plan
+    # ---------------------------------------
+    FREE_LIMIT = 7
+
+    # We need a DB session bound to this user to safely update free_uses
+    db = SessionLocal()
+    user = db.query(User).get(user.id)
+
+    if user.plan == "free" and user.free_uses >= FREE_LIMIT:
+        return jsonify({
+            "error": "limit_reached",
+            "message": "You’ve used your 7 free replies. Upgrade to continue."
+        }), 402
+
     data = request.get_json()
 
     conversation = data.get("conversation", "").strip()
@@ -231,7 +250,13 @@ Rules:
 
     reply_text = completion.choices[0].message.content.strip()
 
+    # ⭐ Increment free usage for free-plan users
+    if user.plan == "free":
+        user.free_uses += 1
+        db.commit()
+
     return jsonify({"reply": reply_text})
+
 
 # ---------------------------------------
 # Run App (Render-compatible)
