@@ -71,6 +71,44 @@ def get_current_user():
         return None
     db = SessionLocal()
     return db.query(User).get(user_id)
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import request, jsonify, session
+
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    email = data.get("email", "").strip().lower()
+    password = data.get("password", "").strip()
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    # Check if user already exists
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+    existing = cur.fetchone()
+
+    if existing:
+        return jsonify({"error": "Email already registered"}), 400
+
+    # Hash password
+    hashed = generate_password_hash(password)
+
+    # Insert new user
+    cur.execute("""
+        INSERT INTO users (email, password_hash, free_uses, plan)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
+    """, (email, hashed, 0, "free"))
+
+    user_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+
+    # Auto‑login after signup
+    session["user_id"] = user_id
+
+    return jsonify({"message": "Signup successful", "user_id": user_id})
 
 # ---------------------------------------
 # Signup Route
@@ -81,6 +119,9 @@ def signup():
     email = data.get("email")
     password = data.get("password")
 
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
     db = SessionLocal()
     existing = db.query(User).filter_by(email=email).first()
     if existing:
@@ -88,7 +129,9 @@ def signup():
 
     user = User(
         email=email,
-        password_hash=bcrypt.hash(password)
+        password_hash=bcrypt.hash(password),
+        free_uses=0,
+        plan="free"
     )
     db.add(user)
     db.commit()
