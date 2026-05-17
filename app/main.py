@@ -5,45 +5,33 @@ from dotenv import load_dotenv
 import os
 import secrets
 from datetime import datetime
-import stripe  # ⭐ ADD THIS
+import stripe
 
 # ---------------------------------------
-# Load environment variables FIRST
+# Load environment variables
 # ---------------------------------------
 load_dotenv()
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY")  # ⭐ ADD THIS
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 # ---------------------------------------
 # Helper: Generate API Key
 # ---------------------------------------
 def generate_api_key():
-    return secrets.token_hex(32)  # 64‑character key
+    return secrets.token_hex(32)
 
 # ---------------------------------------
 # Database Setup (PostgreSQL + SQLAlchemy)
 # ---------------------------------------
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
-from passlib.hash import bcrypt   # ⭐ Needed for password hashing
+from passlib.hash import bcrypt
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
-# ---------------------------------------
-# Flask App Setup
-# ---------------------------------------
-app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
-
-# Enable CORS (allow cookies)
-CORS(app, supports_credentials=True, origins=[
-    "https://cute-melomakarona-3312b6.netlify.app"
-])
-
 
 # ---------------------------------------
 # User Model
@@ -55,10 +43,35 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     api_key_hash = Column(String)
     plan = Column(String, default="free")
-    free_uses = Column(Integer, default=0)  # ⭐ NEW: track how many free replies used
+    free_uses = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+# ---------------------------------------
+# Flask App Setup
+# ---------------------------------------
+app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
+
+# Cookie settings for local + production
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+
+# CORS (must allow localhost + Netlify + cookies)
+CORS(app,
+     supports_credentials=True,
+     resources={r"/*": {"origins": [
+         "https://cute-melomakarona-3312b6.netlify.app",
+         "http://127.0.0.1",
+         "http://127.0.0.1:5000",
+         "http://localhost",
+         "http://localhost:5000"
+     ]}},
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "OPTIONS"]
+)
 
 # ---------------------------------------
 # OpenAI client
@@ -74,44 +87,6 @@ def get_current_user():
         return None
     db = SessionLocal()
     return db.query(User).get(user_id)
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import request, jsonify, session
-
-@app.route("/register", methods=["POST"])
-def register():
-    data = request.get_json()
-    email = data.get("email", "").strip().lower()
-    password = data.get("password", "").strip()
-
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
-
-    # Check if user already exists
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM users WHERE email = %s", (email,))
-    existing = cur.fetchone()
-
-    if existing:
-        return jsonify({"error": "Email already registered"}), 400
-
-    # Hash password
-    hashed = generate_password_hash(password)
-
-    # Insert new user
-    cur.execute("""
-        INSERT INTO users (email, password_hash, free_uses, plan)
-        VALUES (%s, %s, %s, %s)
-        RETURNING id
-    """, (email, hashed, 0, "free"))
-
-    user_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-
-    # Auto‑login after signup
-    session["user_id"] = user_id
-
-    return jsonify({"message": "Signup successful", "user_id": user_id})
 
 # ---------------------------------------
 # Signup Route
@@ -119,6 +94,9 @@ def register():
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
     email = data.get("email")
     password = data.get("password")
 
@@ -149,6 +127,9 @@ def signup():
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
     email = data.get("email")
     password = data.get("password")
 
@@ -224,12 +205,9 @@ def reply():
     if not user:
         return jsonify({"error": "Authentication required"}), 401
 
-    # ---------------------------------------
-    # ⭐ Free usage limit: 7 total for free plan
-    # ---------------------------------------
+    # Free plan limit
     FREE_LIMIT = 7
 
-    # We need a DB session bound to this user to safely update free_uses
     db = SessionLocal()
     user = db.query(User).get(user.id)
 
@@ -240,6 +218,8 @@ def reply():
         }), 402
 
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
 
     conversation = data.get("conversation", "").strip()
     tone = data.get("tone", "Professional")
@@ -249,14 +229,12 @@ def reply():
     if not conversation:
         return jsonify({"error": "Conversation is required."}), 400
 
-    # Length rules
     length_instruction = {
         "Short": "Keep the reply to 1 short sentence.",
         "Medium": "Write a reply that is 2–3 sentences long.",
         "Long": "Write a detailed reply that is 4–6 sentences long."
     }.get(length, "Write a concise reply.")
 
-    # Rewrite vs Generate
     if rewrite_mode:
         user_instruction = (
             "Rewrite the user's draft reply using the selected tone. "
@@ -268,7 +246,6 @@ def reply():
             "Respond as if you are the user, writing a single reply message."
         )
 
-    # System prompt
     system_prompt = f"""
 You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
 
@@ -284,7 +261,6 @@ Rules:
 - Return only the reply text.
 """
 
-    # Call OpenAI
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -296,16 +272,14 @@ Rules:
 
     reply_text = completion.choices[0].message.content.strip()
 
-    # ⭐ Increment free usage for free-plan users
     if user.plan == "free":
         user.free_uses += 1
         db.commit()
 
     return jsonify({"reply": reply_text})
 
-
 # ---------------------------------------
-# Run App (Render-compatible)
+# Run App
 # ---------------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
