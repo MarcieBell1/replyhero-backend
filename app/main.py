@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from passlib.hash import bcrypt
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
