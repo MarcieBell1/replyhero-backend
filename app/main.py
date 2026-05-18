@@ -54,25 +54,23 @@ Base.metadata.create_all(bind=engine)
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
-# Cookie settings for local + production
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-app.config["SESSION_COOKIE_SECURE"] = False
+# ---------------------------------------
+# SESSION COOKIE SETTINGS (REQUIRED FOR NETLIFY + RENDER)
+# ---------------------------------------
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
 app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_DOMAIN"] = ".onrender.com"
 
-# CORS (must allow localhost + Netlify + cookies)
+# ---------------------------------------
+# CORS SETTINGS (MUST NOT USE "*")
+# ---------------------------------------
 CORS(app,
      supports_credentials=True,
-     resources={r"/*": {"origins": [
+     origins=[
          "https://cute-melomakarona-3312b6.netlify.app",
-         "http://127.0.0.1",
-         "http://127.0.0.1:5000",
-         "http://localhost",
-         "http://localhost:5000"
-     ]}},
-     allow_headers=["Content-Type", "Authorization"],
-     methods=["GET", "POST", "OPTIONS"]
-)
-
+         "http://localhost:5500",  # optional for local testing
+     ])
 # ---------------------------------------
 # OpenAI client
 # ---------------------------------------
@@ -221,13 +219,13 @@ def reply():
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
 
-    conversation = data.get("conversation", "").strip()
+    conversation = data.get("conversation", [])
+    if not isinstance(conversation, list):
+        return jsonify({"error": "Conversation must be a list"}), 400
+
     tone = data.get("tone", "Professional")
     rewrite_mode = data.get("rewrite", False)
     length = data.get("length", "Medium")
-
-    if not conversation:
-        return jsonify({"error": "Conversation is required."}), 400
 
     length_instruction = {
         "Short": "Keep the reply to 1 short sentence.",
@@ -261,12 +259,19 @@ Rules:
 - Return only the reply text.
 """
 
+    # Build message history
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Add conversation history (if any)
+    for turn in conversation:
+        messages.append(turn)
+
+    # Add the new user message
+    messages.append({"role": "user", "content": data.get("message", "")})
+
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": conversation}
-        ],
+        messages=messages,
         temperature=0.7,
     )
 
@@ -277,6 +282,7 @@ Rules:
         db.commit()
 
     return jsonify({"reply": reply_text})
+
 
 # ---------------------------------------
 # Run App
