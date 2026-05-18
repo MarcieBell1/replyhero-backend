@@ -55,12 +55,10 @@ Base.metadata.create_all(bind=engine)
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
-from werkzeug.middleware.proxy_fix import ProxyFix
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+# ⭐ Tell Flask what host your app actually runs on
+app.config["SERVER_NAME"] = "replyhero-backend.onrender.com"
 
-# ---------------------------------------
-# SESSION COOKIE SETTINGS (REQUIRED FOR NETLIFY + RENDER)
-# ---------------------------------------
+# ⭐ Session cookie settings (must come BEFORE ProxyFix)
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True,
@@ -68,7 +66,13 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=".onrender.com"
 )
 
+# ⭐ Force Flask to honor cookie settings
 app.config["SESSION_TYPE"] = "filesystem"
+
+# ⭐ ProxyFix (must come AFTER cookie config)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
 
 # ---------------------------------------
 # CORS SETTINGS (MUST NOT USE "*")
