@@ -68,6 +68,8 @@ app.config.update(
     SESSION_COOKIE_DOMAIN=".onrender.com"
 )
 
+app.config["SESSION_TYPE"] = "filesystem"
+
 # ---------------------------------------
 # CORS SETTINGS (MUST NOT USE "*")
 # ---------------------------------------
