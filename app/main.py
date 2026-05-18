@@ -73,10 +73,12 @@ app.config.update(
 # ---------------------------------------
 CORS(app,
      supports_credentials=True,
-     origins=[
+     resources={r"/*": {"origins": [
          "https://cute-melomakarona-3312b6.netlify.app",
-         "http://localhost:5500",  # optional for local testing
-     ])
+         "http://localhost:5500"
+     ]}},
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "OPTIONS"])
 # ---------------------------------------
 # OpenAI client
 # ---------------------------------------
