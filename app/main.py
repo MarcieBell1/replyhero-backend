@@ -60,10 +60,12 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 # ---------------------------------------
 # SESSION COOKIE SETTINGS (REQUIRED FOR NETLIFY + RENDER)
 # ---------------------------------------
-app.config["SESSION_COOKIE_SAMESITE"] = "None"
-app.config["SESSION_COOKIE_SECURE"] = True
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_DOMAIN"] = ".onrender.com"
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_DOMAIN=".onrender.com"
+)
 
 # ---------------------------------------
 # CORS SETTINGS (MUST NOT USE "*")
