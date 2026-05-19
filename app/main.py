@@ -197,7 +197,7 @@ def reply_image():
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "Extract all readable text from this image."},
-                        {"type": "input_image", "image_url": image_data_url}
+                        {"type": "image_url", "image_url": image_data_url}
                     ]
                 }
             ]
