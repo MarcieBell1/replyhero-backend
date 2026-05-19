@@ -2,7 +2,7 @@ flask
 gunicorn
 python-dotenv
 flask-cors
-openai
+openai>=1.14.0
 SQLAlchemy
 psycopg2-binary
 passlib[bcrypt]
