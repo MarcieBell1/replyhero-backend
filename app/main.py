@@ -183,7 +183,7 @@ def generate_api_key_route():
     })
 
 # ---------------------------------------
-# Reply from Image
+# Reply from Image (OCR + reply)
 # ---------------------------------------
 @app.route("/reply-image", methods=["POST"])
 def reply_image():
@@ -205,10 +205,12 @@ def reply_image():
     image_file = request.files["image"]
     image_bytes = image_file.read()
 
-    # OCR
+    print("Image size:", len(image_bytes))  # Debug
+
+    # OCR using correct Vision model
     try:
         vision_response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",   # ⭐ FIXED: Vision-capable model
             messages=[
                 {
                     "role": "user",
@@ -221,6 +223,7 @@ def reply_image():
         )
         extracted_text = vision_response.choices[0].message.content
     except Exception as e:
+        print("OCR ERROR:", str(e))
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
     # Generate reply

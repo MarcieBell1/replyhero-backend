@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <!-- ⭐ LOGIN BAR MOVED INSIDE APP CONTAINER -->
+      <!-- LOGIN BAR -->
       <div class="login-bar" style="display:flex; gap:10px; margin-bottom:16px;">
         <input id="email"
                type="email"
@@ -37,17 +37,12 @@
                placeholder="Password"
                style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text);" />
 
-        <button onclick="loginUser()"
-                class="btn-primary"
-                style="white-space:nowrap;">
+        <button onclick="loginUser()" class="btn-primary" style="white-space:nowrap;">
           Login
-  </button>
+        </button>
 
-  <button onclick="signupUser()"
-          class="btn-outline"
-          style="white-space:nowrap;">
-    Sign Up
-  
+        <button onclick="signupUser()" class="btn-outline" style="white-space:nowrap;">
+          Sign Up
         </button>
       </div>
 
@@ -69,12 +64,7 @@
         </div>
       </div>
 
-      <div class="image-upload-section">
-        <label for="imageInput">Upload a screenshot</label>
-        <input type="file" id="imageInput" accept="image/*">
-
-        <button id="imageReplyBtn">Generate Reply from Image</button>
-</div>
+      <!-- ⭐ OLD IMAGE SECTION REMOVED -->
 
       <div class="input-card">
         <div class="input-label-row">
@@ -83,7 +73,14 @@
             Include both sides so ReplyHero understands context.
           </div>
         </div>
+
         <textarea id="conversation" placeholder="Paste the message here..."></textarea>
+
+        <!-- ⭐ NEW IMAGE UPLOAD SECTION (correct location) -->
+        <div class="upload-wrapper" style="margin-top:16px;">
+          <label for="imageInput" class="mode-label">Upload a screenshot (optional)</label>
+          <input type="file" id="imageInput" accept="image/*">
+        </div>
 
         <div class="options-row">
           <div class="select-group">
@@ -110,9 +107,10 @@
               <option value="stern">Stern</option>
             </select>
           </div>
+
           <div style="display:flex; gap:8px;">
             <button class="btn-primary" id="generateBtn">
-              Generate replies
+              Generate Reply
             </button>
           </div>
         </div>
@@ -132,6 +130,7 @@
         </div>
         <div id="output"></div>
       </div>
+
     </div>
   </div>
 
