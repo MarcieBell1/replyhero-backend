@@ -218,7 +218,7 @@ def reply():
         return jsonify({"error": "Authentication required"}), 401
 
     # Free plan limit
-    FREE_LIMIT = 7
+    FREE_LIMIT = 15
 
     db = SessionLocal()
     user = db.query(User).get(user.id)
@@ -226,7 +226,7 @@ def reply():
     if user.plan == "free" and user.free_uses >= FREE_LIMIT:
         return jsonify({
             "error": "limit_reached",
-            "message": "You’ve used your 7 free replies. Upgrade to continue."
+            "message": "You’ve used your 15 free replies. Upgrade to continue."
         }), 402
 
     data = request.get_json()
