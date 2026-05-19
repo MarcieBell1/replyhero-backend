@@ -246,6 +246,7 @@ def reply_image():
 # Reply from Text
 # ---------------------------------------
 @app.route("/reply", methods=["POST"])
+@app.route("/reply", methods=["POST"])
 def reply():
     user = get_current_user()
     if not user:
@@ -312,6 +313,7 @@ Rules:
 
     messages.append({"role": "user", "content": data.get("message", "")})
 
+    # ⭐ Correct model for text-only replies
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
