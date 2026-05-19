@@ -197,12 +197,50 @@ def reply_image():
     if "image" not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
 
+    # ⭐ Receive tone, rewrite mode, and length from frontend
+    tone = request.form.get("tone", "Professional")
+    rewrite_mode = request.form.get("rewrite", "false") == "true"
+    length = request.form.get("length", "Medium")
+
+    # ⭐ Same length instruction logic as /reply
+    length_instruction = {
+        "Short": "Keep the reply to 1 short sentence.",
+        "Medium": "Write a reply that is 2–3 sentences long.",
+        "Long": "Write a detailed reply that is 4–6 sentences long."
+    }.get(length, "Write a concise reply.")
+
+    # ⭐ Same rewrite vs generate logic as /reply
+    if rewrite_mode:
+        user_instruction = (
+            "Rewrite the user's draft reply using the selected tone. "
+            "Keep the meaning the same but improve clarity, tone, and professionalism."
+        )
+    else:
+        user_instruction = (
+            "Generate a polished reply to the conversation using the selected tone. "
+            "Respond as if you are the user, writing a single reply message."
+        )
+
+    # ⭐ Build system prompt (same as /reply)
+    system_prompt = f"""
+You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+
+Tone to use: {tone}
+Length style: {length_instruction}
+
+Instruction:
+{user_instruction}
+
+Rules:
+- Do not include explanations.
+- Do not mention that you are an AI.
+- Return only the reply text.
+"""
+
+    # ⭐ OCR handling
     image_file = request.files["image"]
     image_bytes = image_file.read()
 
-    print("Image size:", len(image_bytes))
-
-    # Convert to base64 data URL
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
     image_data_url = f"data:image/jpeg;base64,{image_b64}"
 
@@ -225,7 +263,6 @@ def reply_image():
                 }
             ]
         )
-
         extracted_text = vision_response.choices[0].message.content
 
     except Exception as e:
@@ -233,11 +270,24 @@ def reply_image():
         traceback.print_exc(file=sys.stderr)
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
+    # ⭐ Build messages for reply generation
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.append({"role": "user", "content": extracted_text})
+
+    # ⭐ Generate 3 replies (same as /reply)
     try:
-        replies = generate_reply(extracted_text)
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+            n=3
+        )
+        replies = [c.message.content.strip() for c in completion.choices]
+
     except Exception as e:
         return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
+    # ⭐ Update free usage
     db = SessionLocal()
     user = db.get(User, user.id)
     if user.plan == "free":

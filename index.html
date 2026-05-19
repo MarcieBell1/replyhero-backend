@@ -280,44 +280,86 @@ async function generateReplies() {
 
   try {
     /* ------------------------------------
-       CASE 1: IMAGE UPLOADED → /reply-image
-    -------------------------------------*/
-    if (file) {
-      const formData = new FormData();
-      formData.append("image", file);
+   CASE 1: IMAGE UPLOADED → /reply-image
+-------------------------------------*/
+if (file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("tone", toneEl.value);
+  formData.append("rewrite", currentMode === "rewrite");
+  formData.append("length", currentLength);
 
-      const res = await fetch(`${API_BASE}/reply-image`, {
-        method: "POST",
-        credentials: "include",
-        body: formData
-      });
+  const res = await fetch(`${API_BASE}/reply-image`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
 
-      loadingEl.style.display = "none";
+  loadingEl.style.display = "none";
 
-      if (res.status === 401) {
-        outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
-        return;
+  if (res.status === 401) {
+    outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
+    return;
+  }
+
+  if (res.status === 402) {
+    outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
+    return;
+  }
+
+  const data = await res.json();
+
+  if (data.error) {
+    outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
+    return;
+  }
+
+  // ⭐ Correct rendering for /reply-image
+  outputEl.innerHTML = "";
+
+  data.replies.forEach((reply, index) => {
+    const card = document.createElement("div");
+    card.className = "output-card";
+
+    const header = document.createElement("div");
+    header.className = "output-card-header";
+
+    const label = document.createElement("div");
+    label.className = "output-label";
+    label.textContent = `Option ${index + 1}`;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.textContent = "Copy";
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(reply);
+        copyBtn.textContent = "Copied";
+        copyBtn.classList.add("copied");
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+          copyBtn.classList.remove("copied");
+        }, 1200);
+      } catch {
+        alert("Could not copy to clipboard.");
       }
+    });
 
-      if (res.status === 402) {
-        outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
-        return;
-      }
+    header.appendChild(label);
+    header.appendChild(copyBtn);
 
-      const data = await res.json();
+    const body = document.createElement("div");
+    body.className = "output-card-body";
+    body.textContent = reply;
 
-      if (data.error) {
-        outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
-        return;
-      }
+    card.appendChild(header);
+    card.appendChild(body);
+    outputEl.appendChild(card);
+  });
 
-      outputEl.innerHTML = `
-        <div class="output-card">
-          <div class="output-card-body">${data.reply}</div>
-        </div>
-      `;
-      return;
-    }
+  return; // ⭐ important — stop here so text mode doesn't run
+}
 
     /* ------------------------------------
        CASE 2: NO IMAGE → /reply
@@ -364,7 +406,7 @@ async function generateReplies() {
         return;
       }
 
-      replies.push(data.reply);
+      replies = data.replies;
     }
 
     loadingEl.style.display = "none";
