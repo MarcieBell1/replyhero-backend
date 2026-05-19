@@ -12,6 +12,7 @@ import secrets
 import os
 import base64
 import traceback
+import sys
 
 # ---------------------------------------
 # Load environment variables
@@ -96,6 +97,20 @@ def get_current_user():
     return user
 
 # ---------------------------------------
+# Helper: Generate reply from extracted text
+# ---------------------------------------
+def generate_reply(text):
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Rewrite the extracted text into a clean, professional message."},
+            {"role": "user", "content": text}
+        ],
+        temperature=0.7,
+    )
+    return completion.choices[0].message.content.strip()
+
+# ---------------------------------------
 # Signup
 # ---------------------------------------
 @app.route("/signup", methods=["POST"])
@@ -162,7 +177,7 @@ def logout():
     return jsonify({"message": "Logged out"})
 
 # ---------------------------------------
-# Generate API Key
+# OCR + Reply
 # ---------------------------------------
 @app.route("/reply-image", methods=["POST"])
 def reply_image():
@@ -186,7 +201,7 @@ def reply_image():
 
     print("Image size:", len(image_bytes))
 
-    # Convert to base64 data URL (OpenAI 2.x requires this)
+    # Convert to base64 data URL
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
     image_data_url = f"data:image/jpeg;base64,{image_b64}"
 
@@ -202,7 +217,7 @@ def reply_image():
                             "type": "image_url",
                             "image_url": {
                                 "url": image_data_url,
-                                "detail": "auto"   # optional but recommended
+                                "detail": "auto"
                             }
                         }
                     ]
@@ -213,8 +228,8 @@ def reply_image():
         extracted_text = vision_response.choices[0].message.content
 
     except Exception as e:
-        print("OCR ERROR:", str(e))
-        traceback.print_exc()
+        print("OCR ERROR:", e, file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
     try:
@@ -301,7 +316,6 @@ Rules:
 
     messages.append({"role": "user", "content": data.get("message", "")})
 
-    # ⭐ Correct model for text-only replies
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
