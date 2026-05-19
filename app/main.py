@@ -11,6 +11,7 @@ import stripe
 import secrets
 import os
 import base64
+import traceback
 
 # ---------------------------------------
 # Load environment variables
@@ -210,8 +211,6 @@ def reply_image():
         )
 
         extracted_text = vision_response.choices[0].message.content
-
-    import traceback
 
     except Exception as e:
         print("OCR ERROR:", str(e))
