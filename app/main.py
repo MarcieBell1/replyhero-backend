@@ -10,6 +10,7 @@ from datetime import datetime
 import stripe
 import secrets
 import os
+import base64
 
 # ---------------------------------------
 # Load environment variables
@@ -162,29 +163,6 @@ def logout():
 # ---------------------------------------
 # Generate API Key
 # ---------------------------------------
-@app.route("/generate_api_key", methods=["POST"])
-def generate_api_key_route():
-    user = get_current_user()
-    if not user:
-        return jsonify({"error": "Authentication required"}), 401
-
-    db = SessionLocal()
-    new_key = generate_api_key()
-    hashed_key = bcrypt.hash(new_key)
-
-    user = db.get(User, user.id)
-    user.api_key_hash = hashed_key
-    db.commit()
-    db.close()
-
-    return jsonify({
-        "api_key": new_key,
-        "message": "Store this key securely. You will not see it again."
-    })
-
-# ---------------------------------------
-# Reply from Image (OCR + reply)
-# ---------------------------------------
 @app.route("/reply-image", methods=["POST"])
 def reply_image():
     user = get_current_user()
@@ -205,9 +183,12 @@ def reply_image():
     image_file = request.files["image"]
     image_bytes = image_file.read()
 
-    print("Image size:", len(image_bytes))  # Debug
+    print("Image size:", len(image_bytes))
 
-    # ⭐ Correct OCR call using GPT‑4o mini (vision built-in)
+    # Convert to base64 data URL (OpenAI 2.x requires this)
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    image_data_url = f"data:image/jpeg;base64,{image_b64}"
+
     try:
         vision_response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -216,7 +197,7 @@ def reply_image():
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "Extract all readable text from this image."},
-                        {"type": "image", "image": image_bytes}
+                        {"type": "input_image", "image_url": image_data_url}
                     ]
                 }
             ]
@@ -228,13 +209,11 @@ def reply_image():
         print("OCR ERROR:", str(e))
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
-    # Generate reply
     try:
         reply = generate_reply(extracted_text)
     except Exception as e:
         return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
-    # Increment free uses
     db = SessionLocal()
     user = db.get(User, user.id)
     if user.plan == "free":
