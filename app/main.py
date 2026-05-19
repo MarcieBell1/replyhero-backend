@@ -3,10 +3,13 @@ from flask_cors import CORS
 from passlib.hash import bcrypt
 from openai import OpenAI
 from dotenv import load_dotenv
-import os
-import secrets
+from werkzeug.middleware.proxy_fix import ProxyFix
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime
 import stripe
+import secrets
+import os
 
 # ---------------------------------------
 # Load environment variables
@@ -14,6 +17,8 @@ import stripe
 load_dotenv()
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 # ---------------------------------------
 # Helper: Generate API Key
@@ -22,14 +27,8 @@ def generate_api_key():
     return secrets.token_hex(32)
 
 # ---------------------------------------
-# Database Setup (PostgreSQL + SQLAlchemy)
+# Database Setup
 # ---------------------------------------
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker, declarative_base
-from passlib.hash import bcrypt
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -55,10 +54,10 @@ Base.metadata.create_all(bind=engine)
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
-# ⭐ Tell Flask what host your app actually runs on
+# Required for Render
 app.config["SERVER_NAME"] = "replyhero-backend.onrender.com"
 
-# ⭐ Session cookie settings (must come BEFORE ProxyFix)
+# Session cookie settings
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True,
@@ -66,42 +65,36 @@ app.config.update(
     SESSION_COOKIE_DOMAIN="replyhero-backend.onrender.com"
 )
 
-# ⭐ Force Flask to honor cookie settings
 app.config["SESSION_TYPE"] = "filesystem"
 
-# ⭐ ProxyFix (must come AFTER cookie config)
-from werkzeug.middleware.proxy_fix import ProxyFix
+# ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-
-# ---------------------------------------
-# CORS SETTINGS (MUST NOT USE "*")
-# ---------------------------------------
+# CORS
 CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
          "https://cute-melomakarona-3312b6.netlify.app",
          "http://localhost:5500"
-     ]}},
-     allow_headers=["Content-Type", "Authorization"],
-     methods=["GET", "POST", "OPTIONS"])
-# ---------------------------------------
+     ]}})
+
 # OpenAI client
-# ---------------------------------------
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=OPENAI_KEY)
 
 # ---------------------------------------
-# Helper: Get Current User (Session)
+# Helper: Get Current User
 # ---------------------------------------
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
         return None
     db = SessionLocal()
-    return db.query(User).get(user_id)
+    user = db.get(User, user_id)
+    db.close()
+    return user
 
 # ---------------------------------------
-# Signup Route
+# Signup
 # ---------------------------------------
 @app.route("/signup", methods=["POST"])
 def signup():
@@ -118,23 +111,25 @@ def signup():
     db = SessionLocal()
     existing = db.query(User).filter_by(email=email).first()
     if existing:
+        db.close()
         return jsonify({"error": "Email already registered"}), 400
 
     user = User(
         email=email,
         password_hash=bcrypt.hash(password),
-        free_uses=0,
-        plan="free"
+        plan="free",
+        free_uses=0
     )
     db.add(user)
     db.commit()
     db.refresh(user)
+    db.close()
 
     session["user_id"] = user.id
     return jsonify({"message": "Signup successful"})
 
 # ---------------------------------------
-# Login Route
+# Login
 # ---------------------------------------
 @app.route("/login", methods=["POST"])
 def login():
@@ -149,13 +144,15 @@ def login():
     user = db.query(User).filter_by(email=email).first()
 
     if not user or not bcrypt.verify(password, user.password_hash):
+        db.close()
         return jsonify({"error": "Invalid credentials"}), 401
 
     session["user_id"] = user.id
+    db.close()
     return jsonify({"message": "Login successful"})
 
 # ---------------------------------------
-# Logout Route
+# Logout
 # ---------------------------------------
 @app.route("/logout", methods=["POST"])
 def logout():
@@ -163,23 +160,7 @@ def logout():
     return jsonify({"message": "Logged out"})
 
 # ---------------------------------------
-# API Key Authentication Helper
-# ---------------------------------------
-def get_user_by_api_key(provided_key):
-    if not provided_key:
-        return None
-
-    db = SessionLocal()
-    users = db.query(User).all()
-
-    for user in users:
-        if user.api_key_hash and bcrypt.verify(provided_key, user.api_key_hash):
-            return user
-
-    return None
-
-# ---------------------------------------
-# Generate / Regenerate API Key
+# Generate API Key
 # ---------------------------------------
 @app.route("/generate_api_key", methods=["POST"])
 def generate_api_key_route():
@@ -188,12 +169,13 @@ def generate_api_key_route():
         return jsonify({"error": "Authentication required"}), 401
 
     db = SessionLocal()
-
     new_key = generate_api_key()
     hashed_key = bcrypt.hash(new_key)
 
+    user = db.get(User, user.id)
     user.api_key_hash = hashed_key
     db.commit()
+    db.close()
 
     return jsonify({
         "api_key": new_key,
@@ -201,17 +183,17 @@ def generate_api_key_route():
     })
 
 # ---------------------------------------
-# Upload image for conversation
+# Reply from Image
 # ---------------------------------------
 @app.route("/reply-image", methods=["POST"])
 def reply_image():
-    user_id = session.get("user_id")
-    if not user_id:
+    user = get_current_user()
+    if not user:
         return jsonify({"error": "Not logged in"}), 401
 
-    # Enforce free limit unless user is Pro
-    user = User.query.get(user_id)
-    if not user.is_pro and user.free_uses >= FREE_LIMIT:
+    FREE_LIMIT = 15
+
+    if user.plan == "free" and user.free_uses >= FREE_LIMIT:
         return jsonify({
             "error": "limit_reached",
             "message": "You’ve reached your free reply limit."
@@ -221,11 +203,9 @@ def reply_image():
         return jsonify({"error": "No image uploaded"}), 400
 
     image_file = request.files["image"]
-
-    # Read image bytes
     image_bytes = image_file.read()
 
-    # ⭐ OCR using OpenAI Vision
+    # OCR
     try:
         vision_response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -239,49 +219,42 @@ def reply_image():
                 }
             ]
         )
-
-        extracted_text = vision_response.choices[0].message["content"]
-
+        extracted_text = vision_response.choices[0].message.content
     except Exception as e:
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
-    # ⭐ Now pass extracted text into your existing reply generator
+    # Generate reply
     try:
-        reply = generate_reply(extracted_text)  # your existing function
+        reply = generate_reply(extracted_text)
     except Exception as e:
         return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
     # Increment free uses
-    if not user.is_pro:
+    db = SessionLocal()
+    user = db.get(User, user.id)
+    if user.plan == "free":
         user.free_uses += 1
-        db.session.commit()
+        db.commit()
+    db.close()
 
     return jsonify({"reply": reply})
 
 # ---------------------------------------
-# Protected Reply Route
+# Reply from Text
 # ---------------------------------------
 @app.route("/reply", methods=["POST"])
 def reply():
-    # 1. Try session authentication
     user = get_current_user()
-
-    # 2. If no session, try API key
-    if not user:
-        api_key = request.headers.get("X-API-Key")
-        user = get_user_by_api_key(api_key)
-
-    # 3. If still no user → reject
     if not user:
         return jsonify({"error": "Authentication required"}), 401
 
-    # Free plan limit
     FREE_LIMIT = 15
 
     db = SessionLocal()
-    user = db.query(User).get(user.id)
+    user = db.get(User, user.id)
 
     if user.plan == "free" and user.free_uses >= FREE_LIMIT:
+        db.close()
         return jsonify({
             "error": "limit_reached",
             "message": "You’ve used your 15 free replies. Upgrade to continue."
@@ -289,12 +262,10 @@ def reply():
 
     data = request.get_json()
     if not data:
+        db.close()
         return jsonify({"error": "Invalid JSON"}), 400
 
     conversation = data.get("conversation", [])
-    if not isinstance(conversation, list):
-        return jsonify({"error": "Conversation must be a list"}), 400
-
     tone = data.get("tone", "Professional")
     rewrite_mode = data.get("rewrite", False)
     length = data.get("length", "Medium")
@@ -331,14 +302,11 @@ Rules:
 - Return only the reply text.
 """
 
-    # Build message history
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Add conversation history (if any)
     for turn in conversation:
         messages.append(turn)
 
-    # Add the new user message
     messages.append({"role": "user", "content": data.get("message", "")})
 
     completion = client.chat.completions.create(
@@ -353,8 +321,8 @@ Rules:
         user.free_uses += 1
         db.commit()
 
+    db.close()
     return jsonify({"reply": reply_text})
-
 
 # ---------------------------------------
 # Run App

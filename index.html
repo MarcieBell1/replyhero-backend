@@ -137,7 +137,10 @@
 
 <script>
 const API_BASE = "https://replyhero-backend.onrender.com";
-    /* ⭐ LOGIN FUNCTION ADDED */
+
+/* ---------------------------
+   AUTH: SIGNUP + LOGIN
+----------------------------*/
 async function signupUser() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -158,233 +161,131 @@ async function signupUser() {
     alert("Signup failed: " + (data.error || "Unknown error"));
   }
 }
-    async function loginUser() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
 
-      const response = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
+async function loginUser() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-      const data = await response.json();
-      console.log("Login:", data);
+  const response = await fetch(`${API_BASE}/login`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
 
-      if (data.message === "Login successful") {
-        alert("Logged in!");
-      } else {
-        alert("Login failed: " + (data.error || "Unknown error"));
-      }
-    }
+  const data = await response.json();
+  console.log("Login:", data);
 
-    /* ⭐ EXISTING APP LOGIC */
-    const conversationEl = document.getElementById("conversation");
-    const toneEl = document.getElementById("tone");
-    const outputEl = document.getElementById("output");
-    const loadingEl = document.getElementById("loading");
-    const darkToggle = document.getElementById("darkToggle");
+  if (data.message === "Login successful") {
+    alert("Logged in!");
+  } else {
+    alert("Login failed: " + (data.error || "Unknown error"));
+  }
+}
 
-    const modeSegment = document.getElementById("modeSegment");
-    const lengthSegment = document.getElementById("lengthSegment");
-    const inputLabel = document.getElementById("inputLabel");
-    const inputHint = document.getElementById("inputHint");
+/* ---------------------------
+   UI ELEMENTS
+----------------------------*/
+const conversationEl = document.getElementById("conversation");
+const toneEl = document.getElementById("tone");
+const outputEl = document.getElementById("output");
+const loadingEl = document.getElementById("loading");
+const darkToggle = document.getElementById("darkToggle");
+const modeSegment = document.getElementById("modeSegment");
+const lengthSegment = document.getElementById("lengthSegment");
+const inputLabel = document.getElementById("inputLabel");
+const inputHint = document.getElementById("inputHint");
+const imageInput = document.getElementById("imageInput");
 
-    let currentMode = "reply";
-    let currentLength = "Medium";
+let currentMode = "reply";
+let currentLength = "Medium";
 
-    function loadTheme() {
-      const saved = localStorage.getItem("replyhero_theme");
-      if (saved === "dark") {
-        document.body.classList.add("dark");
-      }
-    }
+/* ---------------------------
+   DARK MODE
+----------------------------*/
+function loadTheme() {
+  const saved = localStorage.getItem("replyhero_theme");
+  if (saved === "dark") {
+    document.body.classList.add("dark");
+  }
+}
 
-    function saveTheme() {
-      const isDark = document.body.classList.contains("dark");
-      localStorage.setItem("replyhero_theme", isDark ? "dark" : "light");
-    }
+function saveTheme() {
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("replyhero_theme", isDark ? "dark" : "light");
+}
 
-    darkToggle.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-      saveTheme();
-    });
+darkToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  saveTheme();
+});
 
-    loadTheme();
+loadTheme();
 
-    function updateModeUI() {
-      const buttons = modeSegment.querySelectorAll("button");
-      buttons.forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.mode === currentMode);
-      });
+/* ---------------------------
+   MODE SWITCHING
+----------------------------*/
+function updateModeUI() {
+  const buttons = modeSegment.querySelectorAll("button");
+  buttons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.mode === currentMode);
+  });
 
-      if (currentMode === "reply") {
-        inputLabel.textContent = "Paste your conversation";
-        inputHint.textContent = "Include both sides so ReplyHero understands context.";
-        conversationEl.placeholder =
-          "Paste the message here...";
-      } else {
-        inputLabel.textContent = "Paste your draft reply";
-        inputHint.textContent = "ReplyHero will rewrite it using the selected tone and length.";
-        conversationEl.placeholder = "Hi [Name],\n\nI’m writing to follow up on...";
-      }
-    }
+  if (currentMode === "reply") {
+    inputLabel.textContent = "Paste your conversation";
+    inputHint.textContent = "Include both sides so ReplyHero understands context.";
+    conversationEl.placeholder = "Paste the message here...";
+  } else {
+    inputLabel.textContent = "Paste your draft reply";
+    inputHint.textContent = "ReplyHero will rewrite it using the selected tone and length.";
+    conversationEl.placeholder = "Hi [Name],\n\nI’m writing to follow up on...";
+  }
+}
 
-    modeSegment.addEventListener("click", (e) => {
-      if (e.target.tagName !== "BUTTON") return;
-      currentMode = e.target.dataset.mode;
-      updateModeUI();
-    });
+modeSegment.addEventListener("click", (e) => {
+  if (e.target.tagName !== "BUTTON") return;
+  currentMode = e.target.dataset.mode;
+  updateModeUI();
+});
 
-    function updateLengthUI() {
-      const buttons = lengthSegment.querySelectorAll("button");
-      buttons.forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.length === currentLength);
-      });
-    }
+/* ---------------------------
+   LENGTH SWITCHING
+----------------------------*/
+function updateLengthUI() {
+  const buttons = lengthSegment.querySelectorAll("button");
+  buttons.forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.length === currentLength);
+  });
+}
 
-    lengthSegment.addEventListener("click", (e) => {
-      if (e.target.tagName !== "BUTTON") return;
-      currentLength = e.target.dataset.length;
-      updateLengthUI();
-    });
+lengthSegment.addEventListener("click", (e) => {
+  if (e.target.tagName !== "BUTTON") return;
+  currentLength = e.target.dataset.length;
+  updateLengthUI();
+});
 
-    updateModeUI();
-    updateLengthUI();
+updateModeUI();
+updateLengthUI();
 
-    /* ⭐ UPDATED generateReplies() WITH credentials: "include" */
-    async function generateReplies() {
-      const conversation = conversationEl.value.trim();
-      const tone = toneEl.value;
+/* ---------------------------
+   ⭐ SINGLE BUTTON HANDLER
+   Auto-selects /reply or /reply-image
+----------------------------*/
+async function generateReplies() {
+  const conversation = conversationEl.value.trim();
+  const tone = toneEl.value;
+  const file = imageInput.files[0];
 
-      if (!conversation) return;
+  outputEl.innerHTML = "";
+  loadingEl.style.display = "block";
 
-      outputEl.innerHTML = "";
-      loadingEl.style.display = "block";
-
-      const replies = [];
-
-      try {
-        for (let i = 0; i < 3; i++) {
-          const res = await fetch(`${API_BASE}/reply`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: conversation,
-              conversation: [],
-              tone: tone,
-              rewrite: currentMode === "rewrite",
-              length: currentLength
-            })
-          });
-
-          // ⭐ Handle HTTP 402 (free limit reached)
-          if (res.status === 402) {
-            loadingEl.style.display = "none";
-            outputEl.innerHTML = `
-              <div class="output-card">
-                <div class="output-card-header">
-                  <div class="output-label">Limit Reached</div>
-                </div>
-                <div class="output-card-body">
-                  You’ve reached your free reply limit.
-                </div>
-              </div>
-            `;
-            return; // ⭐ exit entire function
-          }
-
-          const data = await res.json();
-
-          // ⭐ NEW: handle free‑limit reached
-
-          if (data.error === "limit_reached") {
-            loadingEl.style.display = "none";
-            outputEl.innerHTML = `
-              <div class="output-card">
-                <div class="output-card-header">
-                  <div class="output-label">Limit Reached</div>
-                </div>
-                <div class="output-card-body">
-                  ${data.message}
-                </div>
-              </div>
-            `;
-            return; // ⭐ exit entire function
-          }
-
-          if (data.reply) {
-            replies.push(data.reply);
-          } else {
-            replies.push("Error: No reply returned from server.");
-          }
-        }
-      } catch (err) {
-        replies.length = 0;
-        replies.push("Error: Could not reach ReplyHero backend.");
-      }
-
-      loadingEl.style.display = "none";
-      outputEl.innerHTML = "";
-
-      replies.forEach((reply, index) => {
-        const card = document.createElement("div");
-        card.className = "output-card";
-
-        const header = document.createElement("div");
-        header.className = "output-card-header";
-
-        const label = document.createElement("div");
-        label.className = "output-label";
-        label.textContent = `Option ${index + 1}`;
-
-        const copyBtn = document.createElement("button");
-        copyBtn.className = "copy-btn";
-        copyBtn.textContent = "Copy";
-
-        copyBtn.addEventListener("click", async () => {
-          try {
-            await navigator.clipboard.writeText(reply);
-            copyBtn.textContent = "Copied";
-            copyBtn.classList.add("copied");
-            setTimeout(() => {
-              copyBtn.textContent = "Copy";
-              copyBtn.classList.remove("copied");
-            }, 1200);
-          } catch {
-            alert("Could not copy to clipboard.");
-          }
-        });
-
-        header.appendChild(label);
-        header.appendChild(copyBtn);
-
-        const body = document.createElement("div");
-        body.textContent = reply;
-
-        card.appendChild(header);
-        card.appendChild(body);
-        outputEl.appendChild(card);
-      });
-    }
-
-    document.getElementById("generateBtn").addEventListener("click", generateReplies);
-
-    /* ⭐ Image Upload Handler */
-    document.getElementById("imageReplyBtn").addEventListener("click", async () => {
-      const fileInput = document.getElementById("imageInput");
-      if (!fileInput.files.length) {
-        alert("Please upload an image first.");
-        return;
-      }
-
-      outputEl.innerHTML = "";
-      loadingEl.style.display = "block";
-
+  try {
+    /* ------------------------------------
+       CASE 1: IMAGE UPLOADED → /reply-image
+    -------------------------------------*/
+    if (file) {
       const formData = new FormData();
-      formData.append("image", fileInput.files[0]);
+      formData.append("image", file);
 
       const res = await fetch(`${API_BASE}/reply-image`, {
         method: "POST",
@@ -394,26 +295,131 @@ async function signupUser() {
 
       loadingEl.style.display = "none";
 
+      if (res.status === 401) {
+        outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
+        return;
+      }
+
       if (res.status === 402) {
-        outputEl.innerHTML = `
-          <div class="output-card">
-            <div class="output-card-header">
-              <div class="output-label">Limit Reached</div>
-            </div>
-            <div class="output-card-body">
-              You’ve reached your free reply limit.
-            </div>
-          </div>
-        `;
+        outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
         return;
       }
 
       const data = await res.json();
-      outputEl.innerHTML = data.reply
-        ? `<div class="output-card"><div class="output-card-body">${data.reply}</div></div>`
-        : "Error generating reply.";
+
+      if (data.error) {
+        outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
+        return;
+      }
+
+      outputEl.innerHTML = `
+        <div class="output-card">
+          <div class="output-card-body">${data.reply}</div>
+        </div>
+      `;
+      return;
+    }
+
+    /* ------------------------------------
+       CASE 2: NO IMAGE → /reply
+    -------------------------------------*/
+    if (!conversation) {
+      loadingEl.style.display = "none";
+      alert("Please paste a conversation or upload a screenshot.");
+      return;
+    }
+
+    const replies = [];
+
+    for (let i = 0; i < 3; i++) {
+      const res = await fetch(`${API_BASE}/reply`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: conversation,
+          conversation: [],
+          tone: tone,
+          rewrite: currentMode === "rewrite",
+          length: currentLength
+        })
+      });
+
+      if (res.status === 401) {
+        loadingEl.style.display = "none";
+        outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
+        return;
+      }
+
+      if (res.status === 402) {
+        loadingEl.style.display = "none";
+        outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.error) {
+        loadingEl.style.display = "none";
+        outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
+        return;
+      }
+
+      replies.push(data.reply);
+    }
+
+    loadingEl.style.display = "none";
+    outputEl.innerHTML = "";
+
+    replies.forEach((reply, index) => {
+      const card = document.createElement("div");
+      card.className = "output-card";
+
+      const header = document.createElement("div");
+      header.className = "output-card-header";
+
+      const label = document.createElement("div");
+      label.className = "output-label";
+      label.textContent = `Option ${index + 1}`;
+
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "copy-btn";
+      copyBtn.textContent = "Copy";
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(reply);
+          copyBtn.textContent = "Copied";
+          copyBtn.classList.add("copied");
+          setTimeout(() => {
+            copyBtn.textContent = "Copy";
+            copyBtn.classList.remove("copied");
+          }, 1200);
+        } catch {
+          alert("Could not copy to clipboard.");
+        }
+      });
+
+      header.appendChild(label);
+      header.appendChild(copyBtn);
+
+      const body = document.createElement("div");
+      body.textContent = reply;
+
+      card.appendChild(header);
+      card.appendChild(body);
+      outputEl.appendChild(card);
     });
 
-  </script>
+  } catch (err) {
+    loadingEl.style.display = "none";
+    outputEl.innerHTML = `<div class="output-card">Error: Could not reach backend.</div>`;
+  }
+}
+
+/* ⭐ Attach single handler */
+document.getElementById("generateBtn").addEventListener("click", generateReplies);
+</script>
+
 </body>
 </html>
