@@ -211,8 +211,11 @@ def reply_image():
 
         extracted_text = vision_response.choices[0].message.content
 
+    import traceback
+
     except Exception as e:
         print("OCR ERROR:", str(e))
+        traceback.print_exc()
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
     try:
