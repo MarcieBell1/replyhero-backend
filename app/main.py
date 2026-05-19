@@ -107,8 +107,9 @@ def generate_reply(text):
             {"role": "user", "content": text}
         ],
         temperature=0.7,
+        n=3  # ⭐ generate 3 replies
     )
-    return completion.choices[0].message.content.strip()
+    return [choice.message.content.strip() for choice in completion.choices]
 
 # ---------------------------------------
 # Signup
@@ -233,7 +234,7 @@ def reply_image():
         return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
     try:
-        reply = generate_reply(extracted_text)
+        replies = generate_reply(extracted_text)
     except Exception as e:
         return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
@@ -244,7 +245,7 @@ def reply_image():
         db.commit()
     db.close()
 
-    return jsonify({"reply": reply})
+    return jsonify({"replies": replies})
 
 # ---------------------------------------
 # Reply from Text
@@ -320,17 +321,16 @@ Rules:
         model="gpt-4o-mini",
         messages=messages,
         temperature=0.7,
+        n=3  # ⭐ generate 3 replies
     )
 
-    reply_text = completion.choices[0].message.content.strip()
-
+    replies = [c.message.content.strip() for c in completion.choices]
     if user.plan == "free":
         user.free_uses += 1
         db.commit()
 
     db.close()
-    return jsonify({"reply": reply_text})
-
+    return jsonify({"replies": replies})
 # ---------------------------------------
 # Run App
 # ---------------------------------------
