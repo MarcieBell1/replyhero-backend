@@ -201,6 +201,64 @@ def generate_api_key_route():
     })
 
 # ---------------------------------------
+# Upload image for conversation
+# ---------------------------------------
+@app.route("/reply-image", methods=["POST"])
+def reply_image():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    # Enforce free limit unless user is Pro
+    user = User.query.get(user_id)
+    if not user.is_pro and user.free_uses >= FREE_LIMIT:
+        return jsonify({
+            "error": "limit_reached",
+            "message": "You’ve reached your free reply limit."
+        }), 402
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
+
+    image_file = request.files["image"]
+
+    # Read image bytes
+    image_bytes = image_file.read()
+
+    # ⭐ OCR using OpenAI Vision
+    try:
+        vision_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "Extract all readable text from this image."},
+                        {"type": "input_image", "image": image_bytes}
+                    ]
+                }
+            ]
+        )
+
+        extracted_text = vision_response.choices[0].message["content"]
+
+    except Exception as e:
+        return jsonify({"error": "OCR failed", "details": str(e)}), 500
+
+    # ⭐ Now pass extracted text into your existing reply generator
+    try:
+        reply = generate_reply(extracted_text)  # your existing function
+    except Exception as e:
+        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+
+    # Increment free uses
+    if not user.is_pro:
+        user.free_uses += 1
+        db.session.commit()
+
+    return jsonify({"reply": reply})
+
+# ---------------------------------------
 # Protected Reply Route
 # ---------------------------------------
 @app.route("/reply", methods=["POST"])
