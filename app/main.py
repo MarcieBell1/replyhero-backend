@@ -10,6 +10,7 @@ from datetime import datetime
 import stripe
 import secrets
 import os
+import base64
 
 # ---------------------------------------
 # Load environment variables
@@ -207,16 +208,20 @@ def reply_image():
 
     print("Image size:", len(image_bytes))  # Debug
 
+    # Convert to base64
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    image_data_url = f"data:image/jpeg;base64,{image_b64}"
+
     # OCR using correct Vision model
     try:
         vision_response = client.chat.completions.create(
-            model="gpt-4o",   # ⭐ FIXED: Vision-capable model
+            model="gpt-4o-mini-vision",   # ⭐ FIXED: Vision-capable model
             messages=[
                 {
                     "role": "user",
                     "content": [
                         {"type": "input_text", "text": "Extract all readable text from this image."},
-                        {"type": "input_image", "image": image_bytes}
+                        {"type": "input_image", "image_url": image_data_url}
                     ]
                 }
             ]
