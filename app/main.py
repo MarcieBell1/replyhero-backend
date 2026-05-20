@@ -444,8 +444,8 @@ def create_checkout_session():
                 "price": "price_1TYy99PJsm5IOsusyPBPyZaB",  # LIVE PRICE ID
                 "quantity": 1
             }],
-            success_url="https://cute-melomakarona-3312b6.netlify.app/success.html",
-            cancel_url="https://cute-melomakarona-3312b6.netlify.app/cancel.html"
+            success_url="https://reply-hero.com/success.html",
+            cancel_url="https://reply-hero.com/cancel.html"
         )
 
         return jsonify({"url": session_obj.url})
