@@ -110,7 +110,18 @@
         <!-- ⭐ NEW IMAGE UPLOAD SECTION (correct location) -->
         <div class="upload-wrapper" style="margin-top:16px;">
           <label for="imageInput" class="mode-label">Upload a screenshot (optional)</label>
+
           <input type="file" id="imageInput" accept="image/*">
+
+          <!-- ⭐ Filename + Clear button row -->
+          <div id="uploadRow" style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+            <div id="uploadedFileName" style="font-size:14px; color:#555;"></div>
+
+            <!-- ⭐ Clear Upload button (hidden until file is selected) -->
+            <button id="clearUploadBtn" class="btn-outline" style="display:none; padding:4px 8px;">
+              Clear
+            </button>
+          </div>
         </div>
 
         <div class="options-row">
@@ -311,6 +322,29 @@ const inputLabel = document.getElementById("inputLabel");
 const inputHint = document.getElementById("inputHint");
 const imageInput = document.getElementById("imageInput");
 const generateBtn = document.getElementById("generateBtn");
+const uploadedFileName = document.getElementById("uploadedFileName");
+const clearUploadBtn = document.getElementById("clearUploadBtn");
+
+// ⭐ Show filename + Clear button when a file is uploaded
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files[0];
+
+  if (file) {
+    uploadedFileName.textContent = file.name;
+    clearUploadBtn.style.display = "inline-block";
+  }
+});
+
+// ⭐ Clear Upload button logic
+clearUploadBtn.addEventListener("click", () => {
+  imageInput.value = "";
+  uploadedFileName.textContent = "";
+  clearUploadBtn.style.display = "none";
+
+  // Reset mode so Rewrite works correctly
+  currentMode = "reply";
+});
+
 
 let currentMode = "reply";
 let currentLength = "Medium";
@@ -395,6 +429,14 @@ async function generateReplies() {
   loadingEl.style.display = "block";
 
   try {
+
+    // If Rewrite Mode is active, force-clear the file so /reply-image is NOT used
+    if (currentMode === "rewrite" && file) {
+      imageInput.value = "";
+      uploadedFileName.textContent = "";
+      clearUploadBtn.style.display = "none";
+    }
+
     /* ------------------------------------
    CASE 1: IMAGE UPLOADED → /reply-image
 -------------------------------------*/
@@ -491,7 +533,7 @@ if (file) {
       return;
     }
 
-    const replies = [];
+    let replies = [];
 
     for (let i = 0; i < 3; i++) {
       const res = await fetch(`${API_BASE}/reply`, {
