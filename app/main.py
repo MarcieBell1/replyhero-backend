@@ -58,7 +58,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
 # Required for Render
-app.config["SERVER_NAME"] = "replyhero-backend.onrender.com"
+# app.config["SERVER_NAME"] = "replyhero-backend.onrender.com"
 
 # Session cookie settings
 app.config.update(
@@ -381,6 +381,45 @@ Rules:
 
     db.close()
     return jsonify({"replies": replies})
+
+# ---------------------------------------
+# Stripe Webhook Endpoint
+# ---------------------------------------
+@app.route("/stripe/webhook", methods=["POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("Stripe-Signature")
+    webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, webhook_secret
+        )
+    except Exception as e:
+        print("Webhook signature verification failed:", e)
+        return jsonify({"error": "Invalid signature"}), 400
+
+    event_type = event["type"]
+    data = event["data"]["object"]
+
+    # -------------------------
+    # Handle subscription events
+    # -------------------------
+
+    if event_type == "checkout.session.completed":
+        print("Checkout completed:", data.get("id"))
+
+    elif event_type == "invoice.paid":
+        print("Invoice paid:", data.get("id"))
+
+    elif event_type == "invoice.payment_failed":
+        print("Payment failed:", data.get("id"))
+
+    elif event_type == "customer.subscription.deleted":
+        print("Subscription canceled:", data.get("id"))
+
+    return "", 200
+
 # ---------------------------------------
 # Run App
 # ---------------------------------------
