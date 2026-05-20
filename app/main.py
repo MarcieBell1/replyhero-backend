@@ -80,6 +80,7 @@ CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
          "https://reply-hero.com",
+         "https://api.reply-hero.com",
          "http://localhost:5500"
      ]}})
 
