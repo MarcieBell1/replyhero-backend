@@ -456,6 +456,10 @@ async function generateReplies(isUpdate = false) {
   outputEl.innerHTML = "";
   loadingEl.style.display = "block";
 
+  // ⭐ Remove old suggestion box if it exists
+  const oldBox = document.getElementById("factsInput")?.parentElement;
+  if (oldBox) oldBox.remove();
+
   try {
 
     // ⭐  capture facts only if updating
@@ -583,7 +587,7 @@ if (file) {
           conversation: [],
           tone: tone,
           rewrite: currentMode === "rewrite",
-          length: currentLength
+          length: currentLength,
           facts: facts
         })
       });

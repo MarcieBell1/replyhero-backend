@@ -80,7 +80,6 @@ CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
          "https://reply-hero.com",
-         "https://cute-melomakarona-3312b6.netlify.app",
          "http://localhost:5500"
      ]}})
 
