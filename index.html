@@ -28,6 +28,10 @@
             Upgrade to Pro
           </button>
 
+          <button id="manageBillingBtn" class="btn-outline" style="display:none; margin-left:10px;">
+            Manage Subscription
+          </button>
+
           <div id="proBadge" style="
             display:none;
             background:#4CAF50;
@@ -197,6 +201,10 @@ function updateUI(user) {
     upgradeBtn.style.display = "none";
     proBadge.style.display = "none";
     freeMessage.style.display = "none";
+
+    // ⭐ Hide Manage Subscription
+    document.getElementById("manageBillingBtn").style.display = "none";
+
     return;
   }
 
@@ -223,6 +231,9 @@ if (user.plan === "free") {
     generateBtn.style.opacity = "1";
   }
 
+  // ⭐ Hide Manage Subscription for FREE users
+  document.getElementById("manageBillingBtn").style.display = "none";
+
   return;
 }
 
@@ -235,6 +246,9 @@ if (user.plan === "free") {
     generateBtn.disabled = false;
     generateBtn.textContent = "Generate Reply";
     generateBtn.style.opacity = "1";
+
+    // ⭐ Show Manage Subscription button
+    document.getElementById("manageBillingBtn").style.display = "inline-block";
   }
 }
 
@@ -589,6 +603,26 @@ document.getElementById("upgradeBtn").addEventListener("click", async () => {
 
 /* ⭐ Attach single handler */
 document.getElementById("generateBtn").addEventListener("click", generateReplies);
+
+/* ---------------------------
+   ⭐ Manage Billing
+----------------------------*/
+
+document.getElementById("manageBillingBtn").onclick = async () => {
+  const res = await fetch(`${API_BASE}/billing-portal`, {
+    method: "POST",
+    credentials: "include"
+  });
+
+  const data = await res.json();
+
+  if (data.url) {
+    window.location.href = data.url;
+  } else {
+    alert("Could not open billing portal.");
+  }
+};
+
 </script>
 
 </body>
