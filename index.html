@@ -27,6 +27,18 @@
           <button class="btn-primary" id="upgradeBtn" style="margin-left:10px;">
             Upgrade to Pro
           </button>
+
+          <div id="proBadge" style="
+            display:none;
+            background:#4CAF50;
+            color:white;
+            padding:6px 12px;
+            border-radius:8px;
+            font-weight:600;
+            margin-left:10px;
+          ">
+            PRO Active
+          </div>
         </div>
       </div>
 
@@ -49,6 +61,16 @@
         <button onclick="signupUser()" class="btn-outline" style="white-space:nowrap;">
           Sign Up
         </button>
+      </div>
+
+      <!-- ⭐ FREE PLAN MESSAGE (correct location) -->
+      <div id="freeMessage" style="
+        display:none;
+        margin-bottom:16px;
+        color:var(--text);
+        font-size:14px;
+      ">
+        You have <span id="freeCount">15</span> free replies remaining.
       </div>
 
       <div class="mode-row">
@@ -158,8 +180,63 @@ async function loadUser() {
 
 /* Run on page load */
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadUser();
+  const user = await loadUser();
+  updateUI(user);
 });
+
+function updateUI(user) {
+  const upgradeBtn = document.getElementById("upgradeBtn");
+  const proBadge = document.getElementById("proBadge");
+  const loginBar = document.querySelector(".login-bar");
+  const freeMessage = document.getElementById("freeMessage");
+  const freeCount = document.getElementById("freeCount");
+
+  // Not logged in
+  if (!user.logged_in) {
+    loginBar.style.display = "flex";
+    upgradeBtn.style.display = "none";
+    proBadge.style.display = "none";
+    freeMessage.style.display = "none";
+    return;
+  }
+
+  // Logged in → hide login bar
+  loginBar.style.display = "none";
+
+  // FREE PLAN
+if (user.plan === "free") {
+  upgradeBtn.style.display = "inline-block";
+  proBadge.style.display = "none";
+
+  freeMessage.style.display = "block";
+  const remaining = 15 - (user.free_uses || 0);
+  freeCount.textContent = remaining;
+
+  // Disable generate button if limit reached
+  if (remaining <= 0) {
+    generateBtn.disabled = true;
+    generateBtn.textContent = "Limit reached";
+    generateBtn.style.opacity = "0.5";
+  } else {
+    generateBtn.disabled = false;
+    generateBtn.textContent = "Generate Reply";
+    generateBtn.style.opacity = "1";
+  }
+
+  return;
+}
+
+  // PRO PLAN
+  if (user.plan === "pro") {
+    upgradeBtn.style.display = "none";
+    proBadge.style.display = "inline-block";
+    freeMessage.style.display = "none";
+
+    generateBtn.disabled = false;
+    generateBtn.textContent = "Generate Reply";
+    generateBtn.style.opacity = "1";
+  }
+}
 
 /* ---------------------------
    AUTH: SIGNUP + LOGIN
@@ -219,6 +296,7 @@ const lengthSegment = document.getElementById("lengthSegment");
 const inputLabel = document.getElementById("inputLabel");
 const inputHint = document.getElementById("inputHint");
 const imageInput = document.getElementById("imageInput");
+const generateBtn = document.getElementById("generateBtn");
 
 let currentMode = "reply";
 let currentLength = "Medium";
@@ -328,6 +406,11 @@ if (file) {
 
   if (res.status === 402) {
     outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = "Limit reached";
+    generateBtn.style.opacity = "0.5";
+
     return;
   }
 
