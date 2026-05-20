@@ -532,7 +532,7 @@ def billing_portal():
     try:
         session = stripe.billing_portal.Session.create(
             customer=user.stripe_customer_id,
-            return_url="https://replyhero.netlify.app"  # your frontend URL
+            return_url="https://replyhero.com"  # your frontend URL
         )
         return jsonify({"url": session.url})
     except Exception as e:
