@@ -472,8 +472,8 @@ def stripe_webhook():
     # UPGRADE USER TO PRO
     # -------------------------
     if event_type == "checkout.session.completed":
-        customer_id = data.get("customer")
-        subscription_id = data.get("subscription")
+        customer_id = data["customer"]              # ⭐ FIXED
+        subscription_id = data["subscription"]      # ⭐ FIXED
 
         user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
         if user:
@@ -483,7 +483,7 @@ def stripe_webhook():
             print("User upgraded to PRO:", user.email)
 
     elif event_type == "invoice.paid":
-        customer_id = data.get("customer")
+        customer_id = data["customer"]              # ⭐ FIXED
 
         user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
         if user:
@@ -495,7 +495,7 @@ def stripe_webhook():
     # DOWNGRADE USER TO FREE
     # -------------------------
     elif event_type == "customer.subscription.deleted":
-        subscription_id = data.get("id")
+        subscription_id = data["id"]                # ⭐ FIXED
 
         user = db.query(User).filter_by(stripe_subscription_id=subscription_id).first()
         if user:
@@ -505,7 +505,7 @@ def stripe_webhook():
             print("Subscription canceled — user downgraded:", user.email)
 
     elif event_type == "invoice.payment_failed":
-        customer_id = data.get("customer")
+        customer_id = data["customer"]              # ⭐ FIXED
 
         user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
         if user:
