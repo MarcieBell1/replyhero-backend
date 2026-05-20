@@ -111,7 +111,8 @@ def me():
     return jsonify({
         "logged_in": True,
         "email": user.email,
-        "plan": user.plan
+        "plan": user.plan,
+        "free_uses": user.free_uses  # ⭐ REQUIRED
     })
 
 # ---------------------------------------
