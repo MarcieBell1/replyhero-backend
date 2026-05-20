@@ -47,6 +47,8 @@ class User(Base):
     api_key_hash = Column(String)
     plan = Column(String, default="free")
     free_uses = Column(Integer, default=0)
+    stripe_customer_id = Column(String)
+    stripe_subscription_id = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -393,10 +395,28 @@ def create_checkout_session():
         return jsonify({"error": "Not logged in"}), 401
 
     try:
+        # ---------------------------------------
+        # Create or retrieve Stripe customer
+        # ---------------------------------------
+        if not user.stripe_customer_id:
+            customer = stripe.Customer.create(email=user.email)
+
+            # Save Stripe customer ID to DB
+            db = SessionLocal()
+            u = db.get(User, user.id)
+            u.stripe_customer_id = customer.id
+            db.commit()
+            db.close()
+        else:
+            customer = stripe.Customer.retrieve(user.stripe_customer_id)
+
+        # ---------------------------------------
+        # Create checkout session
+        # ---------------------------------------
         session_obj = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
-            customer_email=user.email,
+            customer=customer.id,   # <-- IMPORTANT
             line_items=[{
                 "price": "price_1TYy99PJsm5IOsusyPBPyZaB",  # LIVE PRICE ID
                 "quantity": 1
@@ -404,7 +424,9 @@ def create_checkout_session():
             success_url="https://cute-melomakarona-3312b6.netlify.app/success.html",
             cancel_url="https://cute-melomakarona-3312b6.netlify.app/cancel.html"
         )
+
         return jsonify({"url": session_obj.url})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -428,22 +450,54 @@ def stripe_webhook():
     event_type = event["type"]
     data = event["data"]["object"]
 
-    # -------------------------
-    # Handle subscription events
-    # -------------------------
+    db = SessionLocal()
 
+    # -------------------------
+    # UPGRADE USER TO PRO
+    # -------------------------
     if event_type == "checkout.session.completed":
-        print("Checkout completed:", data.get("id"))
+        customer_id = data.get("customer")
+        subscription_id = data.get("subscription")
+
+        user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
+        if user:
+            user.plan = "pro"
+            user.stripe_subscription_id = subscription_id
+            db.commit()
+            print("User upgraded to PRO:", user.email)
 
     elif event_type == "invoice.paid":
-        print("Invoice paid:", data.get("id"))
+        customer_id = data.get("customer")
+
+        user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
+        if user:
+            user.plan = "pro"
+            db.commit()
+            print("Invoice paid — user confirmed PRO:", user.email)
+
+    # -------------------------
+    # DOWNGRADE USER TO FREE
+    # -------------------------
+    elif event_type == "customer.subscription.deleted":
+        subscription_id = data.get("id")
+
+        user = db.query(User).filter_by(stripe_subscription_id=subscription_id).first()
+        if user:
+            user.plan = "free"
+            user.stripe_subscription_id = None
+            db.commit()
+            print("Subscription canceled — user downgraded:", user.email)
 
     elif event_type == "invoice.payment_failed":
-        print("Payment failed:", data.get("id"))
+        customer_id = data.get("customer")
 
-    elif event_type == "customer.subscription.deleted":
-        print("Subscription canceled:", data.get("id"))
+        user = db.query(User).filter_by(stripe_customer_id=customer_id).first()
+        if user:
+            user.plan = "free"
+            db.commit()
+            print("Payment failed — user downgraded:", user.email)
 
+    db.close()
     return "", 200
 
 # ---------------------------------------
