@@ -60,7 +60,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
 # Required for Render
-# app.config["SERVER_NAME"] = "replyhero-backend.onrender.com"
+# app.config["SERVER_NAME"] = "api.reply-hero.com"
 
 # Session cookie settings
 app.config.update(
@@ -318,6 +318,159 @@ Rules:
         db.commit()
     db.close()
 
+    return jsonify({"replies": replies})
+
+# ---------------------------------------
+# Unified Reply Endpoint (Text + Image + Modes)
+# ---------------------------------------
+@app.route("/generate-reply", methods=["POST"])
+def generate_reply_unified():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    FREE_LIMIT = 15
+
+    db = SessionLocal()
+    user = db.get(User, user.id)
+
+    if user.plan == "free" and user.free_uses >= FREE_LIMIT:
+        db.close()
+        return jsonify({
+            "error": "limit_reached",
+            "message": "You’ve used your 15 free replies. Upgrade to continue."
+        }), 402
+
+    mode = request.form.get("mode")  # paste | start | upload
+    include = request.form.get("include", "")
+    tone = request.form.get("tone", "Professional")
+    length = request.form.get("length", "Medium")
+
+    # Length instruction
+    length_instruction = {
+        "Short": "Keep the reply to 1 short sentence.",
+        "Medium": "Write a reply that is 2–3 sentences long.",
+        "Long": "Write a detailed reply that is 4–6 sentences long."
+    }.get(length, "Write a concise reply.")
+
+    # SYSTEM PROMPT
+    system_prompt = f"""
+You are ReplyHero, an AI assistant that writes polished, clear, human-like replies.
+
+Tone: {tone}
+Length: {length_instruction}
+
+If the user provides extra instructions in the 'include' field,
+you MUST incorporate them naturally into the reply.
+
+Rules:
+- Do not include explanations.
+- Do not mention that you are an AI.
+- Return only the reply text.
+"""
+
+    # -----------------------------
+    # MODE: Paste Existing Conversation
+    # -----------------------------
+    if mode == "paste":
+        conversation = request.form.get("conversation", "")
+        user_prompt = f"""
+The user pasted an existing conversation.
+
+Conversation:
+{conversation}
+
+Additional instructions:
+{include}
+"""
+    
+    # -----------------------------
+    # MODE: Start New Conversation
+    # -----------------------------
+    elif mode == "start":
+        draft = request.form.get("conversation", "")
+        user_prompt = f"""
+The user wants to start a new conversation. Rewrite or generate a polished message.
+
+Draft message:
+{draft}
+
+Additional instructions:
+{include}
+"""
+
+    # -----------------------------
+    # MODE: Upload Screenshot
+    # -----------------------------
+    elif mode == "upload":
+        if "image" not in request.files:
+            return jsonify({"error": "No image uploaded"}), 400
+
+        image_file = request.files["image"]
+        image_bytes = image_file.read()
+
+        # OCR
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_data_url = f"data:image/jpeg;base64,{image_b64}"
+
+        try:
+            vision_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Extract all readable text from this image."},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_data_url, "detail": "auto"}
+                            }
+                        ]
+                    }
+                ]
+            )
+            extracted_text = vision_response.choices[0].message.content
+        except Exception as e:
+            return jsonify({"error": "OCR failed", "details": str(e)}), 500
+
+        user_prompt = f"""
+The user uploaded a screenshot. Extract meaning and generate a reply.
+
+Extracted text:
+{extracted_text}
+
+Additional instructions:
+{include}
+"""
+
+    else:
+        return jsonify({"error": "Invalid mode"}), 400
+
+    # -----------------------------
+    # Generate reply
+    # -----------------------------
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+            n=3
+        )
+        replies = [c.message.content.strip() for c in completion.choices]
+    except Exception as e:
+        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+
+    # Update free usage
+    if user.plan == "free":
+        user.free_uses += 1
+        db.commit()
+
+    db.close()
     return jsonify({"replies": replies})
 
 # ---------------------------------------
