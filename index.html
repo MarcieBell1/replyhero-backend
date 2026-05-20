@@ -22,6 +22,11 @@
         </div>
         <div class="header-right">
           <button class="toggle-dark" id="darkToggle">Dark mode</button>
+
+          <!-- ⭐ NEW UPGRADE BUTTON -->
+          <button class="btn-primary" id="upgradeBtn" style="margin-left:10px;">
+            Upgrade to Pro
+          </button>
         </div>
       </div>
 
@@ -457,6 +462,28 @@ if (file) {
     outputEl.innerHTML = `<div class="output-card">Error: Could not reach backend.</div>`;
   }
 }
+/* ---------------------------
+   ⭐ STRIPE CHECKOUT
+----------------------------*/
+document.getElementById("upgradeBtn").addEventListener("click", async () => {
+  try {
+    const response = await fetch(`${API_BASE}/create-checkout-session`, {
+      method: "POST",
+      credentials: "include"
+    });
+
+    const data = await response.json();
+
+    if (data.url) {
+      window.location.href = data.url; // Redirect to Stripe Checkout
+    } else {
+      alert("Error creating checkout session");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong while starting checkout.");
+  }
+});
 
 /* ⭐ Attach single handler */
 document.getElementById("generateBtn").addEventListener("click", generateReplies);

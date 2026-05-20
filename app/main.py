@@ -77,6 +77,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 CORS(app,
      supports_credentials=True,
      resources={r"/*": {"origins": [
+         "https://reply-hero.com",
          "https://cute-melomakarona-3312b6.netlify.app",
          "http://localhost:5500"
      ]}})
@@ -381,6 +382,31 @@ Rules:
 
     db.close()
     return jsonify({"replies": replies})
+
+# ---------------------------------------
+# Create Stripe Checkout Session
+# ---------------------------------------
+@app.route("/create-checkout-session", methods=["POST"])
+def create_checkout_session():
+    user = get_current_user()
+    if not user:
+        return jsonify({"error": "Not logged in"}), 401
+
+    try:
+        session_obj = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            mode="subscription",
+            customer_email=user.email,
+            line_items=[{
+                "price": "price_1TYy99PJsm5IOsusyPBPyZaB",  # LIVE PRICE ID
+                "quantity": 1
+            }],
+            success_url="https://cute-melomakarona-3312b6.netlify.app/success.html",
+            cancel_url="https://cute-melomakarona-3312b6.netlify.app/cancel.html"
+        )
+        return jsonify({"url": session_obj.url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ---------------------------------------
 # Stripe Webhook Endpoint
