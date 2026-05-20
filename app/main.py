@@ -100,6 +100,21 @@ def get_current_user():
     return user
 
 # ---------------------------------------
+# Current User Info
+# ---------------------------------------
+@app.route("/me", methods=["GET"])
+def me():
+    user = get_current_user()
+    if not user:
+        return jsonify({"logged_in": False})
+
+    return jsonify({
+        "logged_in": True,
+        "email": user.email,
+        "plan": user.plan
+    })
+
+# ---------------------------------------
 # Helper: Generate reply from extracted text
 # ---------------------------------------
 def generate_reply(text):

@@ -143,6 +143,25 @@
 const API_BASE = "https://replyhero-backend.onrender.com";
 
 /* ---------------------------
+   LOAD USER INFO
+----------------------------*/
+
+async function loadUser() {
+  const res = await fetch(`${API_BASE}/me`, {
+    credentials: "include"
+  });
+
+  const user = await res.json();
+  console.log("ME endpoint:", user);
+  return user;
+}
+
+/* Run on page load */
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadUser();
+});
+
+/* ---------------------------
    AUTH: SIGNUP + LOGIN
 ----------------------------*/
 async function signupUser() {
