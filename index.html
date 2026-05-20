@@ -417,10 +417,38 @@ updateModeUI();
 updateLengthUI();
 
 /* ---------------------------
+   ⭐ SUGGESTION BOX
+   Auto-selects /reply or /reply-image
+----------------------------*/
+
+function showSuggestionBox() {
+  const box = document.createElement("div");
+  box.style.marginTop = "20px";
+
+  box.innerHTML = `
+    <div class="mode-label">Add facts or corrections (optional)</div>
+
+    <textarea id="factsInput" placeholder="Add missing details, corrections, or context..."
+      style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); margin-top:6px;"></textarea>
+
+    <button id="updateRepliesBtn" class="btn-primary" style="margin-top:10px;">
+      Update Replies
+    </button>
+  `;
+
+  outputEl.appendChild(box);
+
+  // ⭐ Attach handler for updating replies
+  document.getElementById("updateRepliesBtn").addEventListener("click", () => {
+    generateReplies(true); // pass flag to indicate update mode
+  });
+}
+
+/* ---------------------------
    ⭐ SINGLE BUTTON HANDLER
    Auto-selects /reply or /reply-image
 ----------------------------*/
-async function generateReplies() {
+async function generateReplies(isUpdate = false) {
   const conversation = conversationEl.value.trim();
   const tone = toneEl.value;
   const file = imageInput.files[0];
@@ -429,6 +457,13 @@ async function generateReplies() {
   loadingEl.style.display = "block";
 
   try {
+
+    // ⭐  capture facts only if updating
+    let facts = "";
+    if (isUpdate) {
+      const factsInput = document.getElementById("factsInput");
+      facts = factsInput ? factsInput.value.trim() : "";
+    }
 
     // If Rewrite Mode is active, force-clear the file so /reply-image is NOT used
     if (currentMode === "rewrite" && file) {
@@ -446,6 +481,7 @@ if (file) {
   formData.append("tone", toneEl.value);
   formData.append("rewrite", currentMode === "rewrite");
   formData.append("length", currentLength);
+  formData.append("facts", facts);
 
   const res = await fetch(`${API_BASE}/reply-image`, {
     method: "POST",
@@ -521,6 +557,8 @@ if (file) {
     outputEl.appendChild(card);
   });
 
+  showSuggestionBox();
+
   return; // ⭐ important — stop here so text mode doesn't run
 }
 
@@ -546,6 +584,7 @@ if (file) {
           tone: tone,
           rewrite: currentMode === "rewrite",
           length: currentLength
+          facts: facts
         })
       });
 
@@ -614,6 +653,8 @@ if (file) {
       card.appendChild(body);
       outputEl.appendChild(card);
     });
+
+  showSuggestionBox();
 
   } catch (err) {
     loadingEl.style.display = "none";

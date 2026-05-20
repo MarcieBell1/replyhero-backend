@@ -220,6 +220,7 @@ def reply_image():
     tone = request.form.get("tone", "Professional")
     rewrite_mode = request.form.get("rewrite", "false") == "true"
     length = request.form.get("length", "Medium")
+    facts = request.form.get("facts", "")
 
     # ⭐ Same length instruction logic as /reply
     length_instruction = {
@@ -249,6 +250,9 @@ Length style: {length_instruction}
 
 Instruction:
 {user_instruction}
+
+Additional facts or corrections from the user:
+{facts if facts else "None provided"}
 
 Rules:
 - Do not include explanations.
@@ -346,6 +350,7 @@ def reply():
     tone = data.get("tone", "Professional")
     rewrite_mode = data.get("rewrite", False)
     length = data.get("length", "Medium")
+    facts = data.get("facts", "")
 
     length_instruction = {
         "Short": "Keep the reply to 1 short sentence.",
@@ -372,6 +377,9 @@ Length style: {length_instruction}
 
 Instruction:
 {user_instruction}
+
+Additional facts or corrections from the user:
+{facts if facts else "None provided"}
 
 Rules:
 - Do not include explanations.
