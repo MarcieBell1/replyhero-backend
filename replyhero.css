@@ -47,136 +47,6 @@ body {
   position: relative;
 }
 
-/* Sidebar */
-
-.sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-  z-index: 20;
-}
-
-.sidebar-backdrop.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 260px;
-  background: var(--card);
-  border-right: 1px solid var(--border);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  padding: 16px 14px;
-}
-
-.sidebar.open {
-  transform: translateX(0);
-}
-
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.sidebar-title {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.sidebar-close {
-  border: none;
-  background: transparent;
-  color: var(--subtext);
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.sidebar-list {
-  flex: 1;
-  overflow-y: auto;
-  margin-top: 8px;
-  padding-right: 4px;
-}
-
-.history-item {
-  padding: 8px 10px;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-
-.history-item:hover {
-  background: var(--bg-soft);
-  border-color: var(--border);
-}
-
-.history-title {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-right: 6px;
-}
-
-.history-menu-btn {
-  border: none;
-  background: transparent;
-  color: var(--subtext);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0 4px;
-}
-
-.sidebar-footer {
-  margin-top: 10px;
-  border-top: 1px solid var(--border);
-  padding-top: 10px;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.btn-small {
-  font-size: 0.8rem;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-outline {
-  background: transparent;
-  color: var(--subtext);
-  border: 1px solid var(--border);
-}
-
-.btn-outline-danger {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-}
-
 /* Main app */
 
 .app {
@@ -201,19 +71,6 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.sidebar-toggle {
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  padding: 6px 10px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
 }
 
 .app-title {
@@ -242,7 +99,7 @@ body {
   font-size: 0.85rem;
 }
 
-/* Mode + length controls */
+/* Mode selector */
 
 .mode-row {
   display: flex;
@@ -252,7 +109,12 @@ body {
   justify-content: space-between;
 }
 
-.segmented {
+.mode-label {
+  font-size: 0.8rem;
+  color: var(--subtext);
+}
+
+.mode-tabs {
   display: inline-flex;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -260,7 +122,7 @@ body {
   padding: 3px;
 }
 
-.segmented button {
+.mode-tabs button {
   border: none;
   background: transparent;
   padding: 6px 12px;
@@ -270,18 +132,13 @@ body {
   color: var(--subtext);
 }
 
-.segmented button.active {
+.mode-tabs button.active {
   background: var(--card);
   color: var(--text);
   box-shadow: 0 0 0 1px var(--border);
 }
 
-.mode-label {
-  font-size: 0.8rem;
-  color: var(--subtext);
-}
-
-/* Input area */
+/* Input card */
 
 .input-card {
   border-radius: 14px;
@@ -328,22 +185,23 @@ textarea:focus {
   box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
 }
 
-/* Tone + length row */
+/* Tone + length */
 
 .options-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
+  gap: 16px;
   justify-content: space-between;
-  margin-top: 4px;
 }
 
-.select-group {
+.options-row .select-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.options-row .mode-tabs {
+  white-space: nowrap;
 }
 
 select {
@@ -354,6 +212,8 @@ select {
   color: var(--text);
   font-size: 0.85rem;
 }
+
+/* Buttons */
 
 .btn-primary {
   background: var(--primary);
@@ -473,48 +333,84 @@ select {
   background: #16a34a;
 }
 
-/* Responsive */
+/* ============================
+   ⭐ Upload (Desktop)
+   ============================ */
 
-@media (max-width: 768px) {
-  .app {
-    padding: 18px 16px 16px;
-  }
-  .app-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .mode-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .options-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.upload-wrapper {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.upload-wrapper label.mode-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+#imageInput {
+  margin-top: 8px;
+}
+
+#uploadRow {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ============================
+   ⭐ Upload Button (Mobile)
+   ============================ */
+
+.upload-mobile-btn {
+  display: none;
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+
+.upload-mobile-btn:hover {
+  background: var(--bg-soft);
+}
+
 /* ============================
    ⭐ FULL RESPONSIVE UPGRADE
    ============================ */
 
 @media (max-width: 768px) {
 
+  /* Global readability */
   body {
-    padding: 12px;
+    padding: 16px;
+    font-size: 20px;
+    line-height: 1.6;
   }
 
   .shell {
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
   }
 
   .app {
-    padding: 16px 14px;
+    padding: 24px 20px;
   }
 
-  /* Header stacks */
+  /* Header */
   .app-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 12px;
   }
 
   .left-header {
@@ -522,31 +418,75 @@ select {
     justify-content: space-between;
   }
 
-  /* Login bar stacks vertically */
-  .login-bar,
-  .login-bar input,
-  .login-bar button {
-    width: 100%;
-  }
-
+  /* ⭐ LOGIN BAR — BIGGER EVERYTHING */
   .login-bar {
     display: flex;
     flex-direction: column;
-    gap: 8px !important;
+    gap: 18px !important;
+    width: 100%;
+    background: var(--card);
+    padding: 20px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
   }
 
-  /* Mode + length controls stack */
+  .login-bar input {
+    width: 100%;
+    padding: 18px 20px;
+    font-size: 1.2rem;
+    border-radius: 16px;
+  }
+
+  .login-bar button {
+    width: 100%;
+    padding: 18px 20px;
+    font-size: 1.2rem;
+    border-radius: 16px;
+  }
+
+  /* ⭐ MODE SELECTOR */
   .mode-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 14px;
+    gap: 18px;
   }
 
-  /* Tone + generate button stack */
+  .mode-label {
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .mode-tabs button {
+    padding: 14px 18px;
+    font-size: 1.1rem;
+    border-radius: 14px;
+  }
+
+  /* ⭐ TEXT INPUT AREA */
+  textarea {
+    min-height: 220px;
+    font-size: 1.1rem;
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .input-label,
+  .input-hint {
+    font-size: 1.2rem;
+  }
+
+  /* ⭐ REPLY SHOULD INCLUDE */
+  .include-input {
+    padding: 18px;
+    font-size: 1.1rem;
+    border-radius: 16px;
+  }
+
+  /* ⭐ TONE + LENGTH + GENERATE */
   .options-row {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 18px;
   }
 
   .select-group {
@@ -555,32 +495,76 @@ select {
 
   select {
     width: 100%;
+    padding: 16px;
+    font-size: 1.1rem;
+    border-radius: 16px;
   }
 
   #generateBtn {
     width: 100%;
     justify-content: center;
+    padding: 18px 20px;
+    font-size: 1.2rem;
+    border-radius: 16px;
   }
 
-  /* Textarea full width */
-  textarea {
-    min-height: 180px;
-  }
-
-  /* Output cards full width */
+  /* ⭐ OUTPUT CARDS */
   .output-card {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    padding: 20px;
+    border-radius: 18px;
   }
 
-  /* Sidebar covers full screen */
-  .sidebar {
-    width: 85%;
-    max-width: 320px;
+  .output-title {
+    font-size: 1.4rem;
+    font-weight: 700;
   }
 
-  .sidebar-toggle {
-    padding: 8px 12px;
-    font-size: 0.9rem;
+  .output-subtitle {
+    font-size: 1.1rem;
   }
-}
+
+ /* Global background */
+  body {
+    background: #0d0f12;
+    color: #ffffff;
+  }
+
+  .app {
+    background: #111418;
+    border-radius: 22px;
+  }
+
+  .login-bar,
+  .input-card,
+  .upload-wrapper,
+  .output-card {
+    background: #161a20;
+    border: 1px solid #1f242c;
+    border-radius: 18px;
+  }
+
+  .login-bar input,
+  .include-input,
+  textarea,
+  select {
+    background: #1c2129;
+    border: 1px solid #2a313c;
+    color: #e8ecf3;
+  }
+
+  .btn-primary {
+    background: #007bff;
+    color: white;
+  }
+
+  .btn-outline {
+    border: 1px solid #007bff;
+    color: #007bff;
+  }
+
+  .mode-tabs button.active {
+    background: #007bff;
+    color: white;
+  }
 }

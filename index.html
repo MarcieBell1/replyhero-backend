@@ -74,95 +74,97 @@
         color:var(--text);
         font-size:14px;
       ">
-        You have <span id="freeCount">15</span> free replies remaining.
+        You have <span id="freeCount">5</span> free replies remaining.
       </div>
 
+      <!-- ⭐ MODE SELECTOR -->
       <div class="mode-row">
         <div>
           <div class="mode-label">Mode</div>
-          <div class="segmented" id="modeSegment">
-            <button data-mode="reply" class="active">Generate Reply</button>
-            <button data-mode="rewrite">Rewrite My Reply</button>
+          <div class="mode-tabs" id="modeTabs">
+            <button data-mode="paste" class="active">Paste Conversation</button>
+            <button data-mode="start">Start New</button>
+            <button data-mode="upload">Upload Screenshot</button>
           </div>
         </div>
-        <div>
-          <div class="mode-label">Reply length</div>
-          <div class="segmented" id="lengthSegment">
+      </div>
+
+      <!-- ⭐ TEXT INPUT WRAPPER -->
+      <div id="textInputWrapper" class="input-card" style="margin-top:16px;">
+        <div class="input-label-row">
+          <div class="input-label">Message</div>
+          <div class="input-hint">Paste your conversation or start a new message.</div>
+        </div>
+
+        <textarea id="conversationInput" placeholder="Paste the conversation here..."></textarea>
+      </div>
+
+      <!-- ⭐ UPLOAD WRAPPER -->
+      <div id="uploadWrapper" class="upload-wrapper" style="margin-top:16px; display:none;">
+        <label for="imageInput" class="mode-label">Upload a screenshot (optional)</label>
+        <input type="file" id="imageInput" accept="image/*">
+
+        <div id="uploadRow" style="display:flex; align-items:center; gap:10px; margin-top:6px;">
+          <div id="uploadedFileName" style="font-size:14px; color:#555;"></div>
+          <button id="clearUploadBtn" class="btn-outline" style="display:none; padding:4px 8px;">Clear</button>
+        </div>
+      </div>
+
+      <!-- ⭐ REPLY SHOULD INCLUDE -->
+      <div class="input-card" style="margin-top:16px;">
+        <div class="input-label">Reply Should Include…</div>
+        <input id="includeInput"
+               class="include-input"
+               placeholder="emojis, mention I'm running late, add meeting time, etc.">
+      </div>
+
+      <!-- ⭐ TONE + LENGTH + GENERATE -->
+      <div class="options-row" style="margin-top:16px; align-items:flex-end;">
+
+        <!-- Tone -->
+        <div class="select-group">
+          <div class="mode-label">Tone</div>
+          <select id="toneSelect">
+            <option value="professional">Professional</option>
+            <option value="formal">Formal</option>
+            <option value="warm">Warm</option>
+            <option value="direct">Direct</option>
+            <option value="executive">Executive</option>
+            <option value="empathetic">Empathetic</option>
+            <option value="customer-service">Customer‑Service</option>
+            <option value="friendly">Friendly</option>
+            <option value="flirty">Flirty</option>
+            <option value="assertive">Assertive</option>
+            <option value="casual">Casual</option>
+            <option value="apologetic">Apologetic</option>
+            <option value="enthusiastic">Enthusiastic</option>
+            <option value="supportive">Supportive</option>
+            <option value="sarcastic">Sarcastic</option>
+            <option value="humorous">Humorous</option>
+            <option value="romantic">Romantic</option>
+            <option value="motivational">Motivational</option>
+            <option value="stern">Stern</option>
+          </select>
+        </div>
+
+        <!-- Reply Length -->
+        <div class="select-group">
+          <div class="mode-label">Reply Length</div>
+          <div class="mode-tabs" id="lengthTabs">
             <button data-length="Short">Short</button>
             <button data-length="Medium" class="active">Medium</button>
             <button data-length="Long">Long</button>
           </div>
         </div>
+
+        <!-- Generate -->
+        <button class="btn-primary" id="generateBtn">
+          Generate Reply
+        </button>
       </div>
 
-      <!-- ⭐ OLD IMAGE SECTION REMOVED -->
-
-      <div class="input-card">
-        <div class="input-label-row">
-          <div class="input-label" id="inputLabel">Paste your conversation</div>
-          <div class="input-hint" id="inputHint">
-            Include both sides so ReplyHero understands context.
-          </div>
-        </div>
-
-        <textarea id="conversation" placeholder="Paste the message here..."></textarea>
-
-        <!-- ⭐ NEW IMAGE UPLOAD SECTION (correct location) -->
-        <div class="upload-wrapper" style="margin-top:16px;">
-          <label for="imageInput" class="mode-label">Upload a screenshot (optional)</label>
-
-          <input type="file" id="imageInput" accept="image/*">
-
-          <!-- ⭐ Filename + Clear button row -->
-          <div id="uploadRow" style="display:flex; align-items:center; gap:10px; margin-top:6px;">
-            <div id="uploadedFileName" style="font-size:14px; color:#555;"></div>
-
-            <!-- ⭐ Clear Upload button (hidden until file is selected) -->
-            <button id="clearUploadBtn" class="btn-outline" style="display:none; padding:4px 8px;">
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div class="options-row">
-          <div class="select-group">
-            <div class="mode-label">Tone</div>
-            <select id="tone">
-              <option value="professional">Professional</option>
-              <option value="formal">Formal</option>
-              <option value="warm">Warm</option>
-              <option value="direct">Direct</option>
-              <option value="executive">Executive</option>
-              <option value="empathetic">Empathetic</option>
-              <option value="customer-service">Customer‑Service</option>
-              <option value="friendly">Friendly</option>
-              <option value="flirty">Flirty</option>
-              <option value="assertive">Assertive</option>
-              <option value="casual">Casual</option>
-              <option value="apologetic">Apologetic</option>
-              <option value="enthusiastic">Enthusiastic</option>
-              <option value="supportive">Supportive</option>
-              <option value="sarcastic">Sarcastic</option>
-              <option value="humorous">Humorous</option>
-              <option value="romantic">Romantic</option>
-              <option value="motivational">Motivational</option>
-              <option value="stern">Stern</option>
-            </select>
-          </div>
-
-          <div style="display:flex; gap:8px;">
-            <button class="btn-primary" id="generateBtn">
-              Generate Reply
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div id="loading" class="loading" style="display:none;">
-        <div class="spinner"></div>
-        Crafting your replies…
-      </div>
-
+      <!-- ⭐ OUTPUT -->
+      <div id="loading" style="display:none; margin-top:16px;">Generating reply…</div>
       <div class="output-section">
         <div class="output-header-row">
           <div>
@@ -172,9 +174,6 @@
         </div>
         <div id="output"></div>
       </div>
-
-    </div>
-  </div>
 
 <script>
 const API_BASE = "https://api.reply-hero.com";
@@ -228,7 +227,7 @@ if (user.plan === "free") {
   proBadge.style.display = "none";
 
   freeMessage.style.display = "block";
-  const remaining = 15 - (user.free_uses || 0);
+  const remaining = 5 - (user.free_uses || 0);
   freeCount.textContent = remaining;
 
   // Disable generate button if limit reached
@@ -309,21 +308,37 @@ async function loginUser() {
 }
 
 /* ---------------------------
-   UI ELEMENTS
+   NEW UI ELEMENTS
 ----------------------------*/
-const conversationEl = document.getElementById("conversation");
-const toneEl = document.getElementById("tone");
+// ⭐ Mode + Length tabs
+const modeTabs = document.getElementById("modeTabs");
+const lengthTabs = document.getElementById("lengthTabs");
+
+// ⭐ Input wrappers
+const textInputWrapper = document.getElementById("textInputWrapper");
+const uploadWrapper = document.getElementById("uploadWrapper");
+
+// ⭐ Text inputs
+const conversationInput = document.getElementById("conversationInput");
+const includeInput = document.getElementById("includeInput");
+
+// ⭐ Tone + Generate
+const toneSelect = document.getElementById("toneSelect");
+const generateBtn = document.getElementById("generateBtn");
+
+// ⭐ Output
 const outputEl = document.getElementById("output");
 const loadingEl = document.getElementById("loading");
-const darkToggle = document.getElementById("darkToggle");
-const modeSegment = document.getElementById("modeSegment");
-const lengthSegment = document.getElementById("lengthSegment");
-const inputLabel = document.getElementById("inputLabel");
-const inputHint = document.getElementById("inputHint");
+
+// ⭐ Upload elements (click‑only)
 const imageInput = document.getElementById("imageInput");
-const generateBtn = document.getElementById("generateBtn");
 const uploadedFileName = document.getElementById("uploadedFileName");
 const clearUploadBtn = document.getElementById("clearUploadBtn");
+
+// ⭐ Prevent mode switching when clicking inside upload wrapper
+uploadWrapper.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
 
 // ⭐ Show filename + Clear button when a file is uploaded
 imageInput.addEventListener("change", () => {
@@ -341,202 +356,121 @@ clearUploadBtn.addEventListener("click", () => {
   uploadedFileName.textContent = "";
   clearUploadBtn.style.display = "none";
 
-  // Reset mode so Rewrite works correctly
   currentMode = "reply";
 });
 
-
-let currentMode = "reply";
-let currentLength = "Medium";
-
 /* ---------------------------
-   DARK MODE
+   STATE
 ----------------------------*/
-function loadTheme() {
-  const saved = localStorage.getItem("replyhero_theme");
-  if (saved === "dark") {
-    document.body.classList.add("dark");
-  }
-}
-
-function saveTheme() {
-  const isDark = document.body.classList.contains("dark");
-  localStorage.setItem("replyhero_theme", isDark ? "dark" : "light");
-}
-
-darkToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  saveTheme();
-});
-
-loadTheme();
+let selectedMode = "paste";     // paste | start | upload
+let selectedLength = "Medium";  // Short | Medium | Long
 
 /* ---------------------------
    MODE SWITCHING
 ----------------------------*/
-function updateModeUI() {
-  const buttons = modeSegment.querySelectorAll("button");
-  buttons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.mode === currentMode);
-  });
-
-  if (currentMode === "reply") {
-    inputLabel.textContent = "Paste your conversation";
-    inputHint.textContent = "Include both sides so ReplyHero understands context.";
-    conversationEl.placeholder = "Paste the message here...";
-  } else {
-    inputLabel.textContent = "Paste your draft reply";
-    inputHint.textContent = "ReplyHero will rewrite it using the selected tone and length.";
-    conversationEl.placeholder = "Hi [Name],\n\nI’m writing to follow up on...";
-  }
-}
-
-modeSegment.addEventListener("click", (e) => {
+modeTabs.addEventListener("click", (e) => {
   if (e.target.tagName !== "BUTTON") return;
-  currentMode = e.target.dataset.mode;
-  updateModeUI();
+
+  selectedMode = e.target.dataset.mode;
+
+  // Update active button
+  [...modeTabs.children].forEach(btn =>
+    btn.classList.toggle("active", btn.dataset.mode === selectedMode)
+  );
+
+  // Show/hide input areas
+  if (selectedMode === "upload") {
+    textInputWrapper.style.display = "none";
+    uploadWrapper.style.display = "block";
+  } else {
+    textInputWrapper.style.display = "block";
+    uploadWrapper.style.display = "none";
+
+    conversationInput.placeholder =
+      selectedMode === "paste"
+        ? "Paste the conversation here..."
+        : "Start a new message...";
+  }
 });
 
 /* ---------------------------
    LENGTH SWITCHING
 ----------------------------*/
-function updateLengthUI() {
-  const buttons = lengthSegment.querySelectorAll("button");
-  buttons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.length === currentLength);
-  });
-}
-
-lengthSegment.addEventListener("click", (e) => {
+lengthTabs.addEventListener("click", (e) => {
   if (e.target.tagName !== "BUTTON") return;
-  currentLength = e.target.dataset.length;
-  updateLengthUI();
+
+  selectedLength = e.target.dataset.length;
+
+  [...lengthTabs.children].forEach(btn =>
+    btn.classList.toggle("active", btn.dataset.length === selectedLength)
+  );
 });
 
-updateModeUI();
-updateLengthUI();
-
 /* ---------------------------
-   ⭐ SUGGESTION BOX
-   Auto-selects /reply or /reply-image
+   GENERATE REPLIES
 ----------------------------*/
-
-function showSuggestionBox() {
-  const box = document.createElement("div");
-  box.style.marginTop = "20px";
-
-  box.innerHTML = `
-    <div class="mode-label">Add facts or corrections (optional)</div>
-
-    <textarea id="factsInput" placeholder="Add missing details, corrections, or context..."
-      style="width:100%; min-height:60px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card); color:var(--text); margin-top:6px;"></textarea>
-
-    <button id="updateRepliesBtn" class="btn-primary" style="margin-top:10px;">
-      Update Replies
-    </button>
-  `;
-
-  outputEl.appendChild(box);
-
-  // ⭐ Attach handler for updating replies
-  document.getElementById("updateRepliesBtn").addEventListener("click", () => {
-    generateReplies(true); // pass flag to indicate update mode
-  });
-}
-
-/* ---------------------------
-   ⭐ SINGLE BUTTON HANDLER
-   Auto-selects /reply or /reply-image
-----------------------------*/
-async function generateReplies(isUpdate = false) {
-  const conversation = conversationEl.value.trim();
-  const tone = toneEl.value;
-  const file = imageInput.files[0];
-
+async function generateReplies() {
   outputEl.innerHTML = "";
   loadingEl.style.display = "block";
 
-  // ⭐ Remove old suggestion box if it exists
-  const oldBox = document.getElementById("factsInput")?.parentElement;
-  if (oldBox) oldBox.remove();
+  const form = new FormData();
+  form.append("mode", selectedMode);
+  form.append("tone", toneSelect.value);
+  form.append("length", selectedLength);
+  form.append("include", includeInput.value);
+
+  // Text modes
+  if (selectedMode !== "upload") {
+    form.append("conversation", conversationInput.value.trim());
+  }
+
+  // Upload mode
+  if (selectedMode === "upload" && imageInput.files[0]) {
+    form.append("image", imageInput.files[0]);
+  }
 
   try {
+    const res = await fetch(`${API_BASE}/generate-reply`, {
+      method: "POST",
+      credentials: "include",
+      body: form
+    });
 
-    // ⭐  capture facts only if updating
-    let facts = "";
-    if (isUpdate) {
-      const factsInput = document.getElementById("factsInput");
-      facts = factsInput ? factsInput.value.trim() : "";
+    loadingEl.style.display = "none";
+
+    if (res.status === 401) {
+      outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
+      return;
     }
 
-    // If Rewrite Mode is active, force-clear the file so /reply-image is NOT used
-    if (currentMode === "rewrite" && file) {
-      imageInput.value = "";
-      uploadedFileName.textContent = "";
-      clearUploadBtn.style.display = "none";
+    if (res.status === 402) {
+      outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
+      return;
     }
 
-    /* ------------------------------------
-   CASE 1: IMAGE UPLOADED → /reply-image
--------------------------------------*/
-if (file) {
-  const formData = new FormData();
-  formData.append("image", file);
-  formData.append("tone", toneEl.value);
-  formData.append("rewrite", currentMode === "rewrite");
-  formData.append("length", currentLength);
-  formData.append("facts", facts);
+    const data = await res.json();
 
-  const res = await fetch(`${API_BASE}/reply-image`, {
-    method: "POST",
-    credentials: "include",
-    body: formData
-  });
+    if (!data.replies) {
+      outputEl.innerHTML = `<div class="output-card">Error generating replies.</div>`;
+      return;
+    }
 
-  loadingEl.style.display = "none";
+    outputEl.innerHTML = "";
 
-  if (res.status === 401) {
-    outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
-    return;
-  }
+    data.replies.forEach((reply, index) => {
+      const card = document.createElement("div");
+      card.className = "output-card";
 
-  if (res.status === 402) {
-    outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
+      card.innerHTML = `
+        <div class="output-card-header">
+          <div class="output-label">Option ${index + 1}</div>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div>${reply}</div>
+      `;
 
-    generateBtn.disabled = true;
-    generateBtn.textContent = "Limit reached";
-    generateBtn.style.opacity = "0.5";
-
-    return;
-  }
-
-  const data = await res.json();
-
-  if (data.error) {
-    outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
-    return;
-  }
-
-  // ⭐ Correct rendering for /reply-image
-  outputEl.innerHTML = "";
-
-  data.replies.forEach((reply, index) => {
-    const card = document.createElement("div");
-    card.className = "output-card";
-
-    const header = document.createElement("div");
-    header.className = "output-card-header";
-
-    const label = document.createElement("div");
-    label.className = "output-label";
-    label.textContent = `Option ${index + 1}`;
-
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "copy-btn";
-    copyBtn.textContent = "Copy";
-
-    copyBtn.addEventListener("click", async () => {
-      try {
+      const copyBtn = card.querySelector(".copy-btn");
+      copyBtn.addEventListener("click", async () => {
         await navigator.clipboard.writeText(reply);
         copyBtn.textContent = "Copied";
         copyBtn.classList.add("copied");
@@ -544,127 +478,22 @@ if (file) {
           copyBtn.textContent = "Copy";
           copyBtn.classList.remove("copied");
         }, 1200);
-      } catch {
-        alert("Could not copy to clipboard.");
-      }
-    });
-
-    header.appendChild(label);
-    header.appendChild(copyBtn);
-
-    const body = document.createElement("div");
-    body.className = "output-card-body";
-    body.textContent = reply;
-
-    card.appendChild(header);
-    card.appendChild(body);
-    outputEl.appendChild(card);
-  });
-
-  showSuggestionBox();
-
-  return; // ⭐ important — stop here so text mode doesn't run
-}
-
-    /* ------------------------------------
-       CASE 2: NO IMAGE → /reply
-    -------------------------------------*/
-    if (!conversation) {
-      loadingEl.style.display = "none";
-      alert("Please paste a conversation or upload a screenshot.");
-      return;
-    }
-
-    let replies = [];
-
-    for (let i = 0; i < 3; i++) {
-      const res = await fetch(`${API_BASE}/reply`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: conversation,
-          conversation: [],
-          tone: tone,
-          rewrite: currentMode === "rewrite",
-          length: currentLength,
-          facts: facts
-        })
       });
 
-      if (res.status === 401) {
-        loadingEl.style.display = "none";
-        outputEl.innerHTML = `<div class="output-card">You must be logged in.</div>`;
-        return;
-      }
-
-      if (res.status === 402) {
-        loadingEl.style.display = "none";
-        outputEl.innerHTML = `<div class="output-card">You’ve reached your free reply limit.</div>`;
-        return;
-      }
-
-      const data = await res.json();
-
-      if (data.error) {
-        loadingEl.style.display = "none";
-        outputEl.innerHTML = `<div class="output-card">${data.error}</div>`;
-        return;
-      }
-
-      replies = data.replies;
-    }
-
-    loadingEl.style.display = "none";
-    outputEl.innerHTML = "";
-
-    replies.forEach((reply, index) => {
-      const card = document.createElement("div");
-      card.className = "output-card";
-
-      const header = document.createElement("div");
-      header.className = "output-card-header";
-
-      const label = document.createElement("div");
-      label.className = "output-label";
-      label.textContent = `Option ${index + 1}`;
-
-      const copyBtn = document.createElement("button");
-      copyBtn.className = "copy-btn";
-      copyBtn.textContent = "Copy";
-
-      copyBtn.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(reply);
-          copyBtn.textContent = "Copied";
-          copyBtn.classList.add("copied");
-          setTimeout(() => {
-            copyBtn.textContent = "Copy";
-            copyBtn.classList.remove("copied");
-          }, 1200);
-        } catch {
-          alert("Could not copy to clipboard.");
-        }
-      });
-
-      header.appendChild(label);
-      header.appendChild(copyBtn);
-
-      const body = document.createElement("div");
-      body.textContent = reply;
-
-      card.appendChild(header);
-      card.appendChild(body);
       outputEl.appendChild(card);
     });
-
-  showSuggestionBox();
 
   } catch (err) {
     loadingEl.style.display = "none";
     outputEl.innerHTML = `<div class="output-card">Error: Could not reach backend.</div>`;
   }
 }
+
+/* ---------------------------
+   BIND GENERATE BUTTON
+----------------------------*/
+generateBtn.addEventListener("click", generateReplies);
+
 /* ---------------------------
    ⭐ STRIPE CHECKOUT
 ----------------------------*/
@@ -688,13 +517,9 @@ document.getElementById("upgradeBtn").addEventListener("click", async () => {
   }
 });
 
-/* ⭐ Attach single handler */
-document.getElementById("generateBtn").addEventListener("click", generateReplies);
-
 /* ---------------------------
    ⭐ Manage Billing
 ----------------------------*/
-
 document.getElementById("manageBillingBtn").onclick = async () => {
   const res = await fetch(`${API_BASE}/billing-portal`, {
     method: "POST",
@@ -710,7 +535,30 @@ document.getElementById("manageBillingBtn").onclick = async () => {
   }
 };
 
-</script>
+/* ---------------------------
+   ⭐ DARK MODE (unchanged)
+----------------------------*/
+function loadTheme() {
+  const saved = localStorage.getItem("replyhero_theme");
+  if (saved === "dark") {
+    document.body.classList.add("dark");
+  }
+}
 
+function saveTheme() {
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("replyhero_theme", isDark ? "dark" : "light");
+}
+
+darkToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  saveTheme();
+});
+
+loadTheme();
+
+</script>
+    </div>
+  </div>
 </body>
 </html>
