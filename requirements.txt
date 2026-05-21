@@ -11,3 +11,8 @@ stripe
 requests
 bcrypt==4.0.1
 extract-msg
+olefile
+pdfplumber
+pytesseract
+Pillow
+
