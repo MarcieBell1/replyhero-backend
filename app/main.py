@@ -13,66 +13,140 @@ import os
 import base64
 import traceback
 import sys
-import extract_msg
-import pdfplumber
+import re
+import subprocess
+
+# Email parsing
+import email
+import email.policy
 from email import policy
 from email.parser import BytesParser
-from PIL import Image
+
+# File parsing
+import extract_msg
+import pdfplumber
+
+# OCR
 import pytesseract
+from PIL import Image
+
+# HTML parsing
+from bs4 import BeautifulSoup
+
 
 def extract_email_content(file_path):
-    """
-    Extracts text content from .msg, .eml, .txt, .pdf, and image files.
-    Returns extracted text as a string.
-    """
-
     ext = os.path.splitext(file_path)[1].lower()
 
-    # ⭐ 1. MSG (Outlook)
+    # -----------------------------
+    # .MSG (Outlook desktop)
+    # -----------------------------
     if ext == ".msg":
         try:
             msg = extract_msg.Message(file_path)
-            return msg.body or ""
-        except Exception as e:
-            return f"[Error reading MSG file: {e}]"
+            msg_subject = msg.subject or ""
+            msg_body = ""
 
-    # ⭐ 2. EML (Universal email format)
+            # Prefer HTML body if available
+            if msg.htmlBody:
+                msg_body = html_to_text(msg.htmlBody)
+            elif msg.body:
+                msg_body = msg.body
+            elif msg.rtfBody:
+                msg_body = rtf_to_text(msg.rtfBody)
+
+            # Clean up forwarded chains
+            msg_body = clean_forwarded(msg_body)
+
+            return f"Subject: {msg_subject}\n\n{msg_body}".strip()
+
+        except Exception as e:
+            return f"[MSG parsing error: {str(e)}]"
+
+    # -----------------------------
+    # .EML (Gmail, Outlook Web, Apple Mail)
+    # -----------------------------
     if ext == ".eml":
         try:
             with open(file_path, "rb") as f:
-                msg = BytesParser(policy=policy.default).parse(f)
-            body = msg.get_body(preferencelist=("plain"))
-            return body.get_content() if body else ""
-        except Exception as e:
-            return f"[Error reading EML file: {e}]"
+                msg = email.message_from_binary_file(f, policy=email.policy.default)
 
-    # ⭐ 3. TXT (Plain text)
-    if ext == ".txt":
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                return f.read()
-        except Exception as e:
-            return f"[Error reading TXT file: {e}]"
+            subject = msg.get("subject", "")
+            body = extract_eml_body(msg)
+            body = clean_forwarded(body)
 
-    # ⭐ 4. PDF (Printed emails)
+            return f"Subject: {subject}\n\n{body}".strip()
+
+        except Exception as e:
+            return f"[EML parsing error: {str(e)}]"
+
+    # -----------------------------
+    # .PDF
+    # -----------------------------
     if ext == ".pdf":
         try:
             with pdfplumber.open(file_path) as pdf:
-                pages = [page.extract_text() or "" for page in pdf.pages]
-            return "\n".join(pages)
+                text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+            return text.strip()
         except Exception as e:
-            return f"[Error reading PDF file: {e}]"
+            return f"[PDF extraction error: {str(e)}]"
 
-    # ⭐ 5. Images (OCR)
-    if ext in [".png", ".jpg", ".jpeg", ".webp"]:
+    # -----------------------------
+    # .TXT
+    # -----------------------------
+    if ext == ".txt":
+        try:
+            with open(file_path, "r", errors="ignore") as f:
+                return f.read().strip()
+        except Exception as e:
+            return f"[TXT read error: {str(e)}]"
+
+    # -----------------------------
+    # Images (JPG, PNG, etc.)
+    # -----------------------------
+    if ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]:
         try:
             img = Image.open(file_path)
-            return pytesseract.image_to_string(img)
+            text = pytesseract.image_to_string(img)
+            return text.strip()
         except Exception as e:
-            return f"[Error reading image file: {e}]"
+            return f"[Image OCR error: {str(e)}]"
 
-    # ⭐ Unsupported file type
     return "[Unsupported file type]"
+
+def html_to_text(html):
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text(separator="\n").strip()
+
+def rtf_to_text(rtf):
+    try:
+        # Requires unrtf installed on system
+        result = subprocess.run(
+            ["unrtf", "--text"], input=rtf.encode(), stdout=subprocess.PIPE
+        )
+        return result.stdout.decode(errors="ignore")
+    except:
+        return ""
+
+def extract_eml_body(msg):
+    if msg.is_multipart():
+        for part in msg.walk():
+            ctype = part.get_content_type()
+            if ctype == "text/plain":
+                return part.get_content().strip()
+            if ctype == "text/html":
+                return html_to_text(part.get_content())
+    else:
+        if msg.get_content_type() == "text/html":
+            return html_to_text(msg.get_content())
+        return msg.get_content().strip()
+
+def clean_forwarded(text):
+    # Remove Outlook-style forwarded headers
+    text = re.sub(r"From:.*?\n", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"Sent:.*?\n", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"To:.*?\n", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"Subject:.*?\n", "", text, flags=re.IGNORECASE)
+    return text.strip()
 
 # ---------------------------------------
 # Load environment variables
@@ -481,6 +555,7 @@ Additional instructions:
 """
 
     # -----------------------------
+    # -----------------------------
     # MODE: Upload Email File
     # -----------------------------
     elif mode == "file":
@@ -488,7 +563,19 @@ Additional instructions:
             return jsonify({"error": "No file uploaded"}), 400
 
         uploaded = request.files["file"]
-        file_path = f"/tmp/{uploaded.filename}"
+
+        # Detect extension safely
+        original_ext = os.path.splitext(uploaded.filename)[1].lower()
+        mime = uploaded.mimetype
+
+        # Fix: Render often strips extensions, so detect .msg by MIME
+        if original_ext == "" and mime == "application/vnd.ms-outlook":
+            ext = ".msg"
+        else:
+            ext = original_ext
+
+        # Build a safe temp path with correct extension
+        file_path = f"/tmp/uploaded_email{ext}"
         uploaded.save(file_path)
 
         extracted_text = extract_email_content(file_path)
@@ -502,7 +589,6 @@ Extracted text:
 Additional instructions:
 {include}
 """
-
     # -----------------------------
     # INVALID MODE
     # -----------------------------

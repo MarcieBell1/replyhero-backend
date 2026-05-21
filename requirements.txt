@@ -15,4 +15,5 @@ olefile
 pdfplumber
 pytesseract
 Pillow
-
+beautifulsoup4
+lxml
