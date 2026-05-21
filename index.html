@@ -85,6 +85,7 @@
             <button data-mode="paste" class="active">Paste Conversation</button>
             <button data-mode="start">Start New</button>
             <button data-mode="upload">Upload Screenshot</button>
+            <button data-mode="file">Upload Email File</button>
           </div>
         </div>
       </div>
@@ -101,8 +102,13 @@
 
       <!-- ⭐ UPLOAD WRAPPER -->
       <div id="uploadWrapper" class="upload-wrapper" style="margin-top:16px; display:none;">
-        <label for="imageInput" class="mode-label">Upload a screenshot (optional)</label>
-        <input type="file" id="imageInput" accept="image/*">
+        <label for="imageInput" class="mode-label">Upload a file (optional)</label>
+
+        <input
+          type="file"
+          id="imageInput"
+          accept=".msg,.eml,.txt,.pdf,image/*"
+        >
 
         <div id="uploadRow" style="display:flex; align-items:center; gap:10px; margin-top:6px;">
           <div id="uploadedFileName" style="font-size:14px; color:#555;"></div>
@@ -310,6 +316,38 @@ async function loginUser() {
 /* ---------------------------
    NEW UI ELEMENTS
 ----------------------------*/
+
+// ⭐ Allowed MIME types for uploads
+const allowedTypes = [
+  'application/pdf',
+  'text/plain',
+  'message/rfc822',            // .eml
+  'application/vnd.ms-outlook',// .msg
+  'application/octet-stream',  // fallback for .msg
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp'
+];
+
+// ⭐ File-type icon helper
+function getFileIcon(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+
+  const map = {
+    'pdf': '📄',
+    'txt': '📝',
+    'msg': '✉️',
+    'eml': '✉️',
+    'png': '🖼️',
+    'jpg': '🖼️',
+    'jpeg': '🖼️',
+    'webp': '🖼️'
+  };
+
+  return map[ext] || '📁';
+}
+
 // ⭐ Mode + Length tabs
 const modeTabs = document.getElementById("modeTabs");
 const lengthTabs = document.getElementById("lengthTabs");
@@ -343,11 +381,20 @@ uploadWrapper.addEventListener("click", (e) => {
 // ⭐ Show filename + Clear button when a file is uploaded
 imageInput.addEventListener("change", () => {
   const file = imageInput.files[0];
+  if (!file) return;
 
-  if (file) {
-    uploadedFileName.textContent = file.name;
-    clearUploadBtn.style.display = "inline-block";
+  // ⭐ Validate file type
+  if (!allowedTypes.includes(file.type)) {
+    alert("Unsupported file type.");
+    imageInput.value = "";
+    uploadedFileName.textContent = "";
+    clearUploadBtn.style.display = "none";
+    return;
   }
+
+  // Show icon + filename
+  uploadedFileName.textContent = `${getFileIcon(file.name)} ${file.name}`;
+  clearUploadBtn.style.display = "inline-block";
 });
 
 // ⭐ Clear Upload button logic
@@ -356,13 +403,14 @@ clearUploadBtn.addEventListener("click", () => {
   uploadedFileName.textContent = "";
   clearUploadBtn.style.display = "none";
 
-  currentMode = "reply";
+  selectedMode = "paste"; // or "start", depending on your UX preference
+
 });
 
 /* ---------------------------
    STATE
 ----------------------------*/
-let selectedMode = "paste";     // paste | start | upload
+let selectedMode = "paste";     // paste | start | upload | file
 let selectedLength = "Medium";  // Short | Medium | Long
 
 /* ---------------------------
@@ -378,8 +426,19 @@ modeTabs.addEventListener("click", (e) => {
     btn.classList.toggle("active", btn.dataset.mode === selectedMode)
   );
 
-  // Show/hide input areas
+  // ⭐ Update upload label depending on mode
+  const uploadLabel = document.querySelector('label[for="imageInput"]');
+
   if (selectedMode === "upload") {
+    uploadLabel.textContent = "Upload a screenshot";
+  }
+
+  if (selectedMode === "file") {
+    uploadLabel.textContent = "Upload an email file (.msg, .eml, .txt, .pdf)";
+  }
+
+  // Show/hide input areas
+  if (selectedMode === "upload" || selectedMode === "file") {
     textInputWrapper.style.display = "none";
     uploadWrapper.style.display = "block";
   } else {
@@ -419,14 +478,19 @@ async function generateReplies() {
   form.append("length", selectedLength);
   form.append("include", includeInput.value);
 
-  // Text modes
-  if (selectedMode !== "upload") {
+  // ⭐ Text modes (paste + start)
+  if (selectedMode === "paste" || selectedMode === "start") {
     form.append("conversation", conversationInput.value.trim());
   }
 
-  // Upload mode
+  // ⭐ Screenshot upload mode
   if (selectedMode === "upload" && imageInput.files[0]) {
     form.append("image", imageInput.files[0]);
+  }
+
+  // ⭐ Email file upload mode (.msg, .eml, .txt, .pdf, images)
+  if (selectedMode === "file" && imageInput.files[0]) {
+    form.append("file", imageInput.files[0]);
   }
 
   try {
@@ -451,7 +515,11 @@ async function generateReplies() {
     const data = await res.json();
 
     if (!data.replies) {
-      outputEl.innerHTML = `<div class="output-card">Error generating replies.</div>`;
+      outputEl.innerHTML = `
+        <div class="output-card">
+          ${data.error || "Error generating replies."}
+        </div>
+      `;
       return;
     }
 

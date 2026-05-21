@@ -13,6 +13,66 @@ import os
 import base64
 import traceback
 import sys
+import extract_msg
+import pdfplumber
+from email import policy
+from email.parser import BytesParser
+from PIL import Image
+import pytesseract
+
+def extract_email_content(file_path):
+    """
+    Extracts text content from .msg, .eml, .txt, .pdf, and image files.
+    Returns extracted text as a string.
+    """
+
+    ext = os.path.splitext(file_path)[1].lower()
+
+    # ⭐ 1. MSG (Outlook)
+    if ext == ".msg":
+        try:
+            msg = extract_msg.Message(file_path)
+            return msg.body or ""
+        except Exception as e:
+            return f"[Error reading MSG file: {e}]"
+
+    # ⭐ 2. EML (Universal email format)
+    if ext == ".eml":
+        try:
+            with open(file_path, "rb") as f:
+                msg = BytesParser(policy=policy.default).parse(f)
+            body = msg.get_body(preferencelist=("plain"))
+            return body.get_content() if body else ""
+        except Exception as e:
+            return f"[Error reading EML file: {e}]"
+
+    # ⭐ 3. TXT (Plain text)
+    if ext == ".txt":
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
+        except Exception as e:
+            return f"[Error reading TXT file: {e}]"
+
+    # ⭐ 4. PDF (Printed emails)
+    if ext == ".pdf":
+        try:
+            with pdfplumber.open(file_path) as pdf:
+                pages = [page.extract_text() or "" for page in pdf.pages]
+            return "\n".join(pages)
+        except Exception as e:
+            return f"[Error reading PDF file: {e}]"
+
+    # ⭐ 5. Images (OCR)
+    if ext in [".png", ".jpg", ".jpeg", ".webp"]:
+        try:
+            img = Image.open(file_path)
+            return pytesseract.image_to_string(img)
+        except Exception as e:
+            return f"[Error reading image file: {e}]"
+
+    # ⭐ Unsupported file type
+    return "[Unsupported file type]"
 
 # ---------------------------------------
 # Load environment variables
@@ -399,41 +459,41 @@ Additional instructions:
 {include}
 """
 
-    # -----------------------------
-    # MODE: Upload Screenshot
-    # -----------------------------
-    elif mode == "upload":
-        if "image" not in request.files:
-            return jsonify({"error": "No image uploaded"}), 400
+# -----------------------------
+# MODE: Upload Screenshot
+# -----------------------------
+elif mode == "upload":
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded"}), 400
 
-        image_file = request.files["image"]
-        image_bytes = image_file.read()
+    image_file = request.files["image"]
+    image_bytes = image_file.read()
 
-        # OCR
-        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-        image_data_url = f"data:image/jpeg;base64,{image_b64}"
+    # OCR
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+    image_data_url = f"data:image/jpeg;base64,{image_b64}"
 
-        try:
-            vision_response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Extract all readable text from this image."},
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": image_data_url, "detail": "auto"}
-                            }
-                        ]
-                    }
-                ]
-            )
-            extracted_text = vision_response.choices[0].message.content
-        except Exception as e:
-            return jsonify({"error": "OCR failed", "details": str(e)}), 500
+    try:
+        vision_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Extract all readable text from this image."},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_data_url, "detail": "auto"}
+                        }
+                    ]
+                }
+            ]
+        )
+        extracted_text = vision_response.choices[0].message.content
+    except Exception as e:
+        return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
-        user_prompt = f"""
+    user_prompt = f"""
 The user uploaded a screenshot. Extract meaning and generate a reply.
 
 Extracted text:
@@ -443,8 +503,64 @@ Additional instructions:
 {include}
 """
 
-    else:
-        return jsonify({"error": "Invalid mode"}), 400
+# -----------------------------
+# MODE: Upload Email File (.msg, .eml, .txt, .pdf, images)
+# -----------------------------
+elif mode == "file":
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    uploaded = request.files["file"]
+
+    # Save temporarily
+    file_path = f"/tmp/{uploaded.filename}"
+    uploaded.save(file_path)
+
+    # Extract text using your unified parser
+    extracted_text = extract_email_content(file_path)
+
+    user_prompt = f"""
+The user uploaded an email file. Extract meaning and generate a reply.
+
+Extracted text:
+{extracted_text}
+
+Additional instructions:
+{include}
+"""
+
+# -----------------------------
+# INVALID MODE
+# -----------------------------
+else:
+    return jsonify({"error": "Invalid mode"}), 400
+
+# -----------------------------
+# Generate reply (runs for ALL modes)
+# -----------------------------
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": user_prompt}
+]
+
+try:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=0.7,
+        n=3
+    )
+    replies = [c.message.content.strip() for c in completion.choices]
+except Exception as e:
+    return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+
+# Update free usage
+if user.plan == "free":
+    user.free_uses += 1
+    db.commit()
+
+db.close()
+return jsonify({"replies": replies})
 
     # -----------------------------
     # Generate reply
