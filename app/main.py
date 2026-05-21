@@ -383,6 +383,9 @@ Rules:
 # ---------------------------------------
 # Unified Reply Endpoint (Text + Image + Modes)
 # ---------------------------------------
+# ---------------------------------------
+# Unified Reply Endpoint (Text + Image + Modes)
+# ---------------------------------------
 @app.route("/generate-reply", methods=["POST"])
 def generate_reply_unified():
     user = get_current_user()
@@ -401,33 +404,8 @@ def generate_reply_unified():
             "message": "You’ve used your 5 free replies. Upgrade to continue."
         }), 402
 
-    mode = request.form.get("mode")  # paste | start | upload
+    mode = request.form.get("mode")
     include = request.form.get("include", "")
-    tone = request.form.get("tone", "Professional")
-    length = request.form.get("length", "Medium")
-
-    # Length instruction
-    length_instruction = {
-        "Short": "Keep the reply to 1 short sentence.",
-        "Medium": "Write a reply that is 2–3 sentences long.",
-        "Long": "Write a detailed reply that is 4–6 sentences long."
-    }.get(length, "Write a concise reply.")
-
-    # SYSTEM PROMPT
-    system_prompt = f"""
-You are ReplyHero, an AI assistant that writes polished, clear, human-like replies.
-
-Tone: {tone}
-Length: {length_instruction}
-
-If the user provides extra instructions in the 'include' field,
-you MUST incorporate them naturally into the reply.
-
-Rules:
-- Do not include explanations.
-- Do not mention that you are an AI.
-- Return only the reply text.
-"""
 
     # -----------------------------
     # MODE: Paste Existing Conversation
@@ -443,7 +421,7 @@ Conversation:
 Additional instructions:
 {include}
 """
-    
+
     # -----------------------------
     # MODE: Start New Conversation
     # -----------------------------
@@ -459,41 +437,40 @@ Additional instructions:
 {include}
 """
 
-# -----------------------------
-# MODE: Upload Screenshot
-# -----------------------------
-elif mode == "upload":
-    if "image" not in request.files:
-        return jsonify({"error": "No image uploaded"}), 400
+    # -----------------------------
+    # MODE: Upload Screenshot
+    # -----------------------------
+    elif mode == "upload":
+        if "image" not in request.files:
+            return jsonify({"error": "No image uploaded"}), 400
 
-    image_file = request.files["image"]
-    image_bytes = image_file.read()
+        image_file = request.files["image"]
+        image_bytes = image_file.read()
 
-    # OCR
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    image_data_url = f"data:image/jpeg;base64,{image_b64}"
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        image_data_url = f"data:image/jpeg;base64,{image_b64}"
 
-    try:
-        vision_response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Extract all readable text from this image."},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": image_data_url, "detail": "auto"}
-                        }
-                    ]
-                }
-            ]
-        )
-        extracted_text = vision_response.choices[0].message.content
-    except Exception as e:
-        return jsonify({"error": "OCR failed", "details": str(e)}), 500
+        try:
+            vision_response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Extract all readable text from this image."},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_data_url, "detail": "auto"}
+                            }
+                        ]
+                    }
+                ]
+            )
+            extracted_text = vision_response.choices[0].message.content
+        except Exception as e:
+            return jsonify({"error": "OCR failed", "details": str(e)}), 500
 
-    user_prompt = f"""
+        user_prompt = f"""
 The user uploaded a screenshot. Extract meaning and generate a reply.
 
 Extracted text:
@@ -503,23 +480,20 @@ Additional instructions:
 {include}
 """
 
-# -----------------------------
-# MODE: Upload Email File (.msg, .eml, .txt, .pdf, images)
-# -----------------------------
-elif mode == "file":
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    # -----------------------------
+    # MODE: Upload Email File
+    # -----------------------------
+    elif mode == "file":
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
 
-    uploaded = request.files["file"]
+        uploaded = request.files["file"]
+        file_path = f"/tmp/{uploaded.filename}"
+        uploaded.save(file_path)
 
-    # Save temporarily
-    file_path = f"/tmp/{uploaded.filename}"
-    uploaded.save(file_path)
+        extracted_text = extract_email_content(file_path)
 
-    # Extract text using your unified parser
-    extracted_text = extract_email_content(file_path)
-
-    user_prompt = f"""
+        user_prompt = f"""
 The user uploaded an email file. Extract meaning and generate a reply.
 
 Extracted text:
@@ -529,38 +503,41 @@ Additional instructions:
 {include}
 """
 
-# -----------------------------
-# INVALID MODE
-# -----------------------------
-else:
-    return jsonify({"error": "Invalid mode"}), 400
+    # -----------------------------
+    # INVALID MODE
+    # -----------------------------
+    else:
+        return jsonify({"error": "Invalid mode"}), 400
 
-# -----------------------------
-# Generate reply (runs for ALL modes)
-# -----------------------------
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": user_prompt}
-]
+    # -----------------------------
+    # Generate reply (ALL MODES)
+    # -----------------------------
+    system_prompt = """
+You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+"""
 
-try:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.7,
-        n=3
-    )
-    replies = [c.message.content.strip() for c in completion.choices]
-except Exception as e:
-    return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
 
-# Update free usage
-if user.plan == "free":
-    user.free_uses += 1
-    db.commit()
+    try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+            n=3
+        )
+        replies = [c.message.content.strip() for c in completion.choices]
+    except Exception as e:
+        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
-db.close()
-return jsonify({"replies": replies})
+    if user.plan == "free":
+        user.free_uses += 1
+        db.commit()
+
+    db.close()
+    return jsonify({"replies": replies})
 
     # -----------------------------
     # Generate reply
