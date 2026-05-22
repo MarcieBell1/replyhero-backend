@@ -576,10 +576,18 @@ Additional instructions:
 
         uploaded = request.files["file"]
 
-        original_ext = os.path.splitext(uploaded.filename)[1].lower()
         mime = uploaded.mimetype
+        original_ext = os.path.splitext(uploaded.filename)[1].lower()
 
-        if original_ext == "" and mime == "application/vnd.ms-outlook":
+        # Accept all common .msg MIME types
+        msg_mime_types = {
+            "application/vnd.ms-outlook",
+            "application/octet-stream",
+            "application/x-msdownload",
+            "application/CDFV2-corrupt"
+        }
+
+        if original_ext == "" and mime in msg_mime_types:
             ext = ".msg"
         else:
             ext = original_ext
