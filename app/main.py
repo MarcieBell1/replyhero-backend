@@ -679,33 +679,6 @@ Rules:
     db.close()
     return jsonify({"replies": replies})
 
-    # -----------------------------
-    # Generate reply
-    # -----------------------------
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.7,
-            n=3
-        )
-        replies = [c.message.content.strip() for c in completion.choices]
-    except Exception as e:
-        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
-
-    # Update free usage
-    if user.plan == "free":
-        user.free_uses += 1
-        db.commit()
-
-    db.close()
-    return jsonify({"replies": replies})
-
 # ---------------------------------------
 # Reply from Text
 # ---------------------------------------
