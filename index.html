@@ -74,7 +74,7 @@
         color:var(--text);
         font-size:14px;
       ">
-        You have <span id="freeCount">5</span> free replies remaining.
+        You have <span id="freeCount">15</span> free replies remaining.
       </div>
 
       <!-- ⭐ MODE SELECTOR -->
@@ -260,7 +260,7 @@ if (user.plan === "free") {
   proBadge.style.display = "none";
 
   freeMessage.style.display = "block";
-  const remaining = 5 - (user.free_uses || 0);
+  const remaining = 15 - (user.free_uses || 0);
   freeCount.textContent = remaining;
 
   // Disable generate button if limit reached

@@ -755,7 +755,7 @@ def reply_image():
     if not user:
         return jsonify({"error": "Not logged in"}), 401
 
-    FREE_LIMIT = 5
+    FREE_LIMIT = 15
 
     if user.plan == "free" and user.free_uses >= FREE_LIMIT:
         return jsonify({
@@ -885,7 +885,7 @@ def generate_reply_unified():
     if not user:
         return jsonify({"error": "Authentication required"}), 401
 
-    FREE_LIMIT = 5
+    FREE_LIMIT = 15
 
     db = SessionLocal()
     user = db.get(User, user.id)
@@ -894,7 +894,7 @@ def generate_reply_unified():
         db.close()
         return jsonify({
             "error": "limit_reached",
-            "message": "You’ve used your 5 free replies. Upgrade to continue."
+            "message": "You’ve used your 15 free replies. Upgrade to continue."
         }), 402
 
     mode = request.form.get("mode")
@@ -1116,7 +1116,7 @@ def reply():
     if not user:
         return jsonify({"error": "Authentication required"}), 401
 
-    FREE_LIMIT = 5
+    FREE_LIMIT = 15
 
     db = SessionLocal()
     user = db.get(User, user.id)
@@ -1125,7 +1125,7 @@ def reply():
         db.close()
         return jsonify({
             "error": "limit_reached",
-            "message": "You’ve used your 5 free replies. Upgrade to continue."
+            "message": "You’ve used your 15 free replies. Upgrade to continue."
         }), 402
 
     data = request.get_json()
