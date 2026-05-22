@@ -806,12 +806,13 @@ Length style: {length_instruction}
 Instruction:
 {user_instruction}
 
-Additional facts or corrections from the user:
+Additional facts or corrections from the user (these override the conversation context and define the user's perspective):
 {facts if facts else "None provided"}
 
 Rules:
 - Do not include explanations.
 - Do not mention that you are an AI.
+- If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
 """
 
@@ -1069,12 +1070,13 @@ Length style: {length_instruction}
 Instruction:
 {user_instruction}
 
-Additional facts or corrections from the user:
+Additional facts or corrections from the user (these override the conversation context and define the user's perspective):
 {facts if facts else "None provided"}
 
 Rules:
 - Do not include explanations.
 - Do not mention that you are an AI.
+- If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
 """
 
@@ -1169,12 +1171,13 @@ Length style: {length_instruction}
 Instruction:
 {user_instruction}
 
-Additional facts or corrections from the user:
+Additional facts or corrections from the user (these override the conversation context and define the user's perspective):
 {facts if facts else "None provided"}
 
 Rules:
 - Do not include explanations.
 - Do not mention that you are an AI.
+- If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
 """
 
