@@ -46,7 +46,6 @@ def extract_email_content(file_path):
             msg_subject = msg.subject or ""
             msg_body = ""
 
-            # Prefer HTML body if available
             if msg.htmlBody:
                 msg_body = html_to_text(msg.htmlBody)
             elif msg.body:
@@ -54,7 +53,6 @@ def extract_email_content(file_path):
             elif msg.rtfBody:
                 msg_body = rtf_to_text(msg.rtfBody)
 
-            # Clean up forwarded chains
             msg_body = clean_forwarded(msg_body)
 
             return f"Subject: {msg_subject}\n\n{msg_body}".strip()
@@ -63,7 +61,7 @@ def extract_email_content(file_path):
             return f"[MSG parsing error: {str(e)}]"
 
     # -----------------------------
-    # .EML (Gmail, Outlook Web, Apple Mail)
+    # .EML
     # -----------------------------
     if ext == ".eml":
         try:
@@ -101,7 +99,7 @@ def extract_email_content(file_path):
             return f"[TXT read error: {str(e)}]"
 
     # -----------------------------
-    # Images (JPG, PNG, etc.)
+    # Images
     # -----------------------------
     if ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]:
         try:
@@ -113,20 +111,33 @@ def extract_email_content(file_path):
 
     return "[Unsupported file type]"
 
+
+# -----------------------------
+# Helper: HTML → Text
+# -----------------------------
 def html_to_text(html):
     soup = BeautifulSoup(html, "html.parser")
     return soup.get_text(separator="\n").strip()
 
+
+# -----------------------------
+# Helper: RTF → Text
+# -----------------------------
 def rtf_to_text(rtf):
     try:
-        # Requires unrtf installed on system
         result = subprocess.run(
-            ["unrtf", "--text"], input=rtf.encode(), stdout=subprocess.PIPE
+            ["unrtf", "--text"],
+            input=rtf.encode(),
+            stdout=subprocess.PIPE
         )
         return result.stdout.decode(errors="ignore")
     except:
         return ""
 
+
+# -----------------------------
+# Helper: Extract EML Body
+# -----------------------------
 def extract_eml_body(msg):
     if msg.is_multipart():
         for part in msg.walk():
@@ -140,8 +151,11 @@ def extract_eml_body(msg):
             return html_to_text(msg.get_content())
         return msg.get_content().strip()
 
+
+# -----------------------------
+# Helper: Clean Forwarded Headers
+# -----------------------------
 def clean_forwarded(text):
-    # Remove Outlook-style forwarded headers
     text = re.sub(r"From:.*?\n", "", text, flags=re.IGNORECASE)
     text = re.sub(r"Sent:.*?\n", "", text, flags=re.IGNORECASE)
     text = re.sub(r"To:.*?\n", "", text, flags=re.IGNORECASE)
@@ -193,10 +207,6 @@ Base.metadata.create_all(bind=engine)
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this")
 
-# Required for Render
-# app.config["SERVER_NAME"] = "api.reply-hero.com"
-
-# Session cookie settings
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True,
@@ -210,13 +220,19 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # CORS
-CORS(app,
-     supports_credentials=True,
-     resources={r"/*": {"origins": [
-         "https://reply-hero.com",
-         "https://api.reply-hero.com",
-         "http://localhost:5500"
-     ]}})
+CORS(
+    app,
+    supports_credentials=True,
+    resources={
+        r"/*": {
+            "origins": [
+                "https://reply-hero.com",
+                "https://api.reply-hero.com",
+                "http://localhost:5500"
+            ]
+        }
+    }
+)
 
 # OpenAI client
 client = OpenAI(api_key=OPENAI_KEY)
@@ -246,7 +262,7 @@ def me():
         "logged_in": True,
         "email": user.email,
         "plan": user.plan,
-        "free_uses": user.free_uses  # ⭐ REQUIRED
+        "free_uses": user.free_uses
     })
 
 # ---------------------------------------
@@ -260,7 +276,7 @@ def generate_reply(text):
             {"role": "user", "content": text}
         ],
         temperature=0.7,
-        n=3  # ⭐ generate 3 replies
+        n=3
     )
     return [choice.message.content.strip() for choice in completion.choices]
 
@@ -655,15 +671,15 @@ Rules:
     db.close()
     return jsonify({"replies": replies})
 
-# -----------------------------
-# Generate reply
-# -----------------------------
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": user_prompt}
-]
+    # -----------------------------
+    # Generate reply
+    # -----------------------------
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
 
-try:
+    try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
@@ -748,7 +764,6 @@ Rules:
 - Do not mention that you are an AI.
 - Return only the reply text.
 """
-
     messages = [{"role": "system", "content": system_prompt}]
 
     for turn in conversation:
@@ -764,6 +779,7 @@ Rules:
     )
 
     replies = [c.message.content.strip() for c in completion.choices]
+
     if user.plan == "free":
         user.free_uses += 1
         db.commit()
@@ -885,6 +901,7 @@ def stripe_webhook():
 
     db.close()
     return "", 200
+
 
 @app.route("/billing-portal", methods=["POST"])
 def billing_portal():
