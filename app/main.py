@@ -51,8 +51,8 @@ def extract_email_content(file_path):
             elif msg.body:
                 msg_body = msg.body
             elif msg.rtfBody:
-                msg_body = rtf_to_text(msg.rtfBody)
-
+                # RTF conversion disabled (Render-safe)
+                msg_body = ""
             msg_body = clean_forwarded(msg_body)
 
             return f"Subject: {msg_subject}\n\n{msg_body}".strip()
@@ -99,18 +99,12 @@ def extract_email_content(file_path):
             return f"[TXT read error: {str(e)}]"
 
     # -----------------------------
-    # Images
+    # Images (Render-safe: no Tesseract)
     # -----------------------------
     if ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]:
-        try:
-            img = Image.open(file_path)
-            text = pytesseract.image_to_string(img)
-            return text.strip()
-        except Exception as e:
-            return f"[Image OCR error: {str(e)}]"
+        return "[Image OCR not supported in file uploads]"
 
     return "[Unsupported file type]"
-
 
 # -----------------------------
 # Helper: HTML → Text
@@ -124,15 +118,7 @@ def html_to_text(html):
 # Helper: RTF → Text
 # -----------------------------
 def rtf_to_text(rtf):
-    try:
-        result = subprocess.run(
-            ["unrtf", "--text"],
-            input=rtf.encode(),
-            stdout=subprocess.PIPE
-        )
-        return result.stdout.decode(errors="ignore")
-    except:
-        return ""
+    return ""
 
 
 # -----------------------------
