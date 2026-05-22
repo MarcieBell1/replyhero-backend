@@ -131,25 +131,52 @@
         <div class="select-group">
           <div class="mode-label">Tone</div>
           <select id="toneSelect">
-            <option value="professional">Professional</option>
-            <option value="formal">Formal</option>
-            <option value="warm">Warm</option>
-            <option value="direct">Direct</option>
-            <option value="executive">Executive</option>
-            <option value="empathetic">Empathetic</option>
-            <option value="customer-service">Customer‑Service</option>
-            <option value="friendly">Friendly</option>
-            <option value="flirty">Flirty</option>
-            <option value="assertive">Assertive</option>
-            <option value="casual">Casual</option>
-            <option value="apologetic">Apologetic</option>
-            <option value="enthusiastic">Enthusiastic</option>
-            <option value="supportive">Supportive</option>
-            <option value="sarcastic">Sarcastic</option>
-            <option value="humorous">Humorous</option>
-            <option value="romantic">Romantic</option>
-            <option value="motivational">Motivational</option>
-            <option value="stern">Stern</option>
+
+            <!-- ⭐ ALPHABETIZED TONES -->
+            <option value="Academic">Academic</option>
+            <option value="Apologetic">Apologetic</option>
+            <option value="Assertive">Assertive</option>
+            <option value="Casual">Casual</option>
+            <option value="Corporate Passive-Aggressive">Corporate Passive‑Aggressive</option>
+            <option value="Debate-Oriented">Debate-Oriented</option>
+            <option value="Direct">Direct</option>
+            <option value="Dry British">Dry British</option>
+            <option value="Enthusiastic">Enthusiastic</option>
+            <option value="Fact-Driven">Fact-Driven</option>
+            <option value="Gamer">Gamer / Esports</option>
+            <option value="Gen-Z Chaotic">Gen‑Z Chaotic</option>
+            <option value="Hippie">Hippie</option>
+            <option value="Humorous">Humorous</option>
+            <option value="Influencer">Influencer</option>
+            <option value="Intimate X">Intimate X (Emotionally Deep)</option>
+            <option value="Lawyer-Style">Lawyer‑Style</option>
+            <option value="Minimalist">Minimalist</option>
+            <option value="Mom Friend">Mom Friend</option>
+            <option value="Motivational">Motivational</option>
+            <option value="Naturalist">Naturalist</option>
+            <option value="Pet Lovers">Pet Lovers (Animal-Oriented)</option>
+            <option value="Politics-Democrat">Politics – Democrat</option>
+            <option value="Politics-Neutral">Politics – Neutral</option>
+            <option value="Politics-Republican">Politics – Republican</option>
+            <option value="Poetic">Poetic</option>
+            <option value="Professional-Executive">Professional / Executive</option>
+            <option value="Promotional">Promotional</option>
+            <option value="Romantic-Flirty">Romantic / Flirty</option>
+            <option value="Sarcastic">Sarcastic</option>
+            <option value="Savage">Savage</option>
+            <option value="Southern Sweet">Southern Sweet</option>
+            <option value="Sports Enthusiasts">Sports Enthusiasts</option>
+            <option value="Stern">Stern</option>
+            <option value="Supportive">Supportive</option>
+            <option value="Techie">Techie</option>
+            <option value="Therapist-Style">Therapist‑Style</option>
+            <option value="Toxic-Narcissist Defense">Toxic-Narcissist Defense</option>
+            <option value="Victorian Formal">Victorian Formal</option>
+            <option value="Villain Arc">Villain Arc</option>
+            <option value="Warm-Empathetic">Warm / Empathetic</option>
+            <option value="Weirdcore">AI Weirdcore</option>
+            <option value="Youthful">Youthful</option>
+
           </select>
         </div>
 
@@ -434,7 +461,7 @@ modeTabs.addEventListener("click", (e) => {
   }
 
   if (selectedMode === "file") {
-    uploadLabel.textContent = "Upload an email file (.msg, .eml, .txt, .pdf)";
+    uploadLabel.textContent = "Upload an email file (.eml, .txt, .pdf)";
   }
 
   // Show/hide input areas

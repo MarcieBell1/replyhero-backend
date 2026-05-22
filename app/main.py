@@ -285,6 +285,387 @@ def me():
     })
 
 # ---------------------------------------
+# TONE DICTIONARY
+# ---------------------------------------
+TONES = {
+
+    # ---------------------------------------
+    # CORE TONES (Merged + Standard)
+    # ---------------------------------------
+
+    "Professional-Executive": {
+        "model_should": [
+            "Use polished, structured, workplace-appropriate language.",
+            "Maintain clarity, confidence, and professionalism.",
+            "Avoid slang or emotional phrasing.",
+            "Focus on solutions, strategy, and clear outcomes."
+        ]
+    },
+
+    "Warm-Empathetic": {
+        "model_should": [
+            "Validate the sender's feelings.",
+            "Use gentle, supportive, emotionally warm language.",
+            "Show understanding without being overly casual.",
+            "Avoid harsh or overly direct phrasing."
+        ]
+    },
+
+    "Romantic-Flirty": {
+        "model_should": [
+            "Use playful, affectionate language.",
+            "Maintain light, safe romantic energy.",
+            "Avoid explicit or suggestive content.",
+            "Keep the tone warm, fun, and emotionally open."
+        ]
+    },
+
+    "Intimate X": {
+        "model_should": [
+            "Use emotionally deep, mature language.",
+            "Express vulnerability and sincerity.",
+            "Maintain warmth without being sexual.",
+            "Focus on emotional connection, trust, and honesty."
+        ]
+    },
+
+    "Direct": {
+        "model_should": [
+            "Get to the point quickly.",
+            "Use short, clear sentences.",
+            "Avoid unnecessary details or softening language."
+        ]
+    },
+
+    "Assertive": {
+        "model_should": [
+            "Set boundaries clearly and confidently.",
+            "Use firm but respectful language.",
+            "Avoid apologizing unnecessarily.",
+            "Maintain a tone of self-assurance."
+        ]
+    },
+
+    "Casual": {
+        "model_should": [
+            "Use relaxed, everyday language.",
+            "Avoid formality.",
+            "Keep the tone light, friendly, and conversational."
+        ]
+    },
+
+    "Apologetic": {
+        "model_should": [
+            "Take responsibility where appropriate.",
+            "Express regret clearly and sincerely.",
+            "Offer a path to repair or improvement."
+        ]
+    },
+
+    "Enthusiastic": {
+        "model_should": [
+            "Use energetic, upbeat language.",
+            "Maintain a positive, excited tone.",
+            "Show genuine interest or excitement."
+        ]
+    },
+
+    "Supportive": {
+        "model_should": [
+            "Offer reassurance and encouragement.",
+            "Highlight strengths and positive outcomes.",
+            "Use caring, uplifting language."
+        ]
+    },
+
+    "Sarcastic": {
+        "model_should": [
+            "Use subtle irony or dry humor.",
+            "Avoid cruelty or hostility.",
+            "Keep the tone clever and light."
+        ]
+    },
+
+    "Humorous": {
+        "model_should": [
+            "Use light, safe humor.",
+            "Keep the tone fun and playful.",
+            "Avoid offensive or edgy jokes."
+        ]
+    },
+
+    "Motivational": {
+        "model_should": [
+            "Encourage confidence and action.",
+            "Use uplifting, inspiring language.",
+            "Focus on growth and positive momentum."
+        ]
+    },
+
+    "Stern": {
+        "model_should": [
+            "Use firm, corrective language.",
+            "Avoid emotional softness.",
+            "Maintain authority and seriousness."
+        ]
+    },
+
+    # ---------------------------------------
+    # POLITICAL TONES
+    # ---------------------------------------
+
+    "Politics-Democrat": {
+        "model_should": [
+            "Use inclusive, socially conscious framing.",
+            "Avoid inflammatory or divisive language.",
+            "Maintain respectful political tone."
+        ]
+    },
+
+    "Politics-Republican": {
+        "model_should": [
+            "Emphasize tradition and personal responsibility.",
+            "Avoid inflammatory or divisive language.",
+            "Maintain respectful political tone."
+        ]
+    },
+
+    "Politics-Neutral": {
+        "model_should": [
+            "Avoid ideological language.",
+            "Stick to facts and balanced framing.",
+            "Maintain neutrality and clarity."
+        ]
+    },
+
+    # ---------------------------------------
+    # SPECIALTY TONES
+    # ---------------------------------------
+
+    "Debate-Oriented": {
+        "model_should": [
+            "Use structured arguments.",
+            "Present point-counterpoint clearly.",
+            "Maintain logical clarity and reasoning."
+        ]
+    },
+
+    "Youthful": {
+        "model_should": [
+            "Use modern slang sparingly and naturally.",
+            "Keep the tone energetic and current.",
+            "Avoid forced or cringe phrasing."
+        ]
+    },
+
+    "Pet Lovers": {
+        "model_should": [
+            "Use gentle, animal-themed metaphors.",
+            "Maintain nurturing, wholesome energy.",
+            "Avoid infantilizing the user.",
+            "Keep the tone warm and comforting."
+        ]
+    },
+
+    "Sports Enthusiasts": {
+        "model_should": [
+            "Use competitive or team-based metaphors.",
+            "Keep the tone energetic and motivational.",
+            "Maintain a hype, team-spirit feel."
+        ]
+    },
+
+    "Promotional": {
+        "model_should": [
+            "Use persuasive, benefit-driven language.",
+            "Maintain soft CTA energy.",
+            "Avoid sounding spammy or aggressive."
+        ]
+    },
+
+    "Toxic-Narcissist Defense": {
+        "model_should": [
+            "Identify manipulation patterns.",
+            "Stay emotionally neutral and grounded.",
+            "Set boundaries clearly and calmly.",
+            "Avoid escalation or emotional entanglement.",
+            "Avoid JADE: Justify, Argue, Defend, Explain."
+        ]
+    },
+
+    "Techie": {
+        "model_should": [
+            "Use light technical jargon.",
+            "Keep explanations logical and structured.",
+            "Maintain a knowledgeable, analytical tone."
+        ]
+    },
+
+    "Naturalist": {
+        "model_should": [
+            "Use nature-based metaphors.",
+            "Maintain a grounded, calm tone.",
+            "Avoid overly poetic or abstract language."
+        ]
+    },
+
+    "Minimalist": {
+        "model_should": [
+            "Use extremely short replies.",
+            "Remove all unnecessary words.",
+            "Keep only essential meaning."
+        ]
+    },
+
+    "Hippie": {
+        "model_should": [
+            "Use peaceful, spiritual language.",
+            "Maintain a calm, flowing tone.",
+            "Avoid parody or caricature."
+        ]
+    },
+
+    "Fact-Driven": {
+        "model_should": [
+            "Use evidence-based statements.",
+            "Avoid emotional or subjective language.",
+            "Prioritize clarity and accuracy."
+        ]
+    },
+
+    # ---------------------------------------
+    # VIRAL TONES
+    # ---------------------------------------
+
+    "Savage": {
+        "model_should": [
+            "Use sharp, witty clapback energy.",
+            "Stay clever without being abusive.",
+            "Maintain confidence and attitude."
+        ]
+    },
+
+    "Corporate Passive-Aggressive": {
+        "model_should": [
+            "Use overly polite but subtly pointed language.",
+            "Maintain a professional veneer.",
+            "Imply frustration without stating it directly."
+        ]
+    },
+
+    "Therapist-Style": {
+        "model_should": [
+            "Use calm, reflective, emotionally intelligent language.",
+            "Encourage clarity and boundaries.",
+            "Avoid judgment or escalation."
+        ]
+    },
+
+    "Influencer": {
+        "model_should": [
+            "Use trendy, aesthetic, upbeat language.",
+            "Maintain soft-sell, lifestyle energy.",
+            "Keep the tone polished and social-media friendly."
+        ]
+    },
+
+    "Gen-Z Chaotic": {
+        "model_should": [
+            "Use chaotic, meme-coded humor.",
+            "Maintain unhinged but harmless energy.",
+            "Avoid offensive or explicit content."
+        ]
+    },
+
+    "Dry British": {
+        "model_should": [
+            "Use understated, deadpan humor.",
+            "Maintain subtle sarcasm.",
+            "Keep the tone clever and reserved."
+        ]
+    },
+
+    "Southern Sweet": {
+        "model_should": [
+            "Use warm, polite, Southern-style charm.",
+            "Maintain gentle tone with subtle sass.",
+            "Avoid stereotypes or caricatures."
+        ]
+    },
+
+    "Lawyer-Style": {
+        "model_should": [
+            "Use precise, formal, legalistic language.",
+            "Structure arguments clearly.",
+            "Maintain a logical, evidence-based tone."
+        ]
+    },
+
+    "Academic": {
+        "model_should": [
+            "Use intellectual, research-style language.",
+            "Maintain structured, analytical tone.",
+            "Avoid emotional or casual phrasing."
+        ]
+    },
+
+    "Poetic": {
+        "model_should": [
+            "Use metaphorical, lyrical language.",
+            "Maintain emotional depth and imagery.",
+            "Avoid being overly abstract or confusing."
+        ]
+    },
+
+    "Villain Arc": {
+        "model_should": [
+            "Use cold, calculated, powerful language.",
+            "Maintain confidence and emotional detachment.",
+            "Avoid cruelty or explicit hostility."
+        ]
+    },
+
+    "Victorian Formal": {
+        "model_should": [
+            "Use ornate, old-fashioned formal language.",
+            "Maintain politeness and dramatic flair.",
+            "Avoid modern slang or casual phrasing."
+        ]
+    },
+
+    "Weirdcore": {
+        "model_should": [
+            "Use surreal, dreamlike, uncanny language.",
+            "Maintain aesthetic strangeness without confusion.",
+            "Avoid disturbing or graphic content."
+        ]
+    },
+
+    "Gamer": {
+        "model_should": [
+            "Use gaming metaphors and competitive energy.",
+            "Maintain hype and tactical tone.",
+            "Avoid toxic gamer stereotypes."
+        ]
+    },
+
+    "Mom Friend": {
+        "model_should": [
+            "Use nurturing, practical, caring language.",
+            "Offer reassurance and gentle guidance.",
+            "Maintain wholesome, supportive tone."
+        ]
+    }
+}
+
+def build_tone_instructions(tone_name):
+    tone = TONES.get(tone_name)
+    if not tone:
+        return ""
+    rules = "\n".join(f"- {r}" for r in tone["model_should"])
+    return f"\nTone Behavior:\n{rules}\n"
+
+# ---------------------------------------
 # Helper: Generate reply from extracted text
 # ---------------------------------------
 def generate_reply(text):
@@ -386,7 +767,7 @@ def reply_image():
         return jsonify({"error": "No image uploaded"}), 400
 
     # ⭐ Receive tone, rewrite mode, and length from frontend
-    tone = request.form.get("tone", "Professional")
+    tone = request.form.get("tone", "Professional-Executive")
     rewrite_mode = request.form.get("rewrite", "false") == "true"
     length = request.form.get("length", "Medium")
     facts = request.form.get("facts", "")
@@ -410,11 +791,16 @@ def reply_image():
             "Respond as if you are the user, writing a single reply message."
         )
 
-    # ⭐ Build system prompt (same as /reply)
-    system_prompt = f"""
-You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+    # ⭐ Build tone instructions
+    tone_instructions = build_tone_instructions(tone)
 
-Tone to use: {tone}
+    # ⭐ Build system prompt
+    system_prompt = f"""
+You are ReplyHero, an AI assistant that helps users write clear, polished, and context-aware replies.
+
+Tone selected: {tone}
+{tone_instructions}
+
 Length style: {length_instruction}
 
 Instruction:
@@ -622,7 +1008,6 @@ Additional instructions:
         file_path = f"/tmp/uploaded_email{ext}"
         uploaded.save(file_path)
 
-        # ⭐ INSERT LOGGING HERE
         logging.info(f"[upload] Uploaded filename: {uploaded.filename}")
         logging.info(f"[upload] Browser MIME type: {mime}")
         logging.info(f"[upload] Original extension: {original_ext}")
@@ -647,7 +1032,7 @@ Additional instructions:
     # -----------------------------
     # Tone, Length, Rewrite, Facts
     # -----------------------------
-    tone = request.form.get("tone", "Professional")
+    tone = request.form.get("tone", "Professional-Executive")
     length = request.form.get("length", "Medium")
     rewrite_mode = request.form.get("rewrite", "false") == "true"
     facts = request.form.get("facts", "")
@@ -669,10 +1054,16 @@ Additional instructions:
             "Respond as if you are the user, writing a single reply message."
         )
 
-    system_prompt = f"""
-You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+    # Build tone instructions
+    tone_instructions = build_tone_instructions(tone)
 
-Tone to use: {tone}
+    # Build system prompt
+    system_prompt = f"""
+You are ReplyHero, an AI assistant that helps users write clear, polished, and context-aware replies.
+
+Tone selected: {tone}
+{tone_instructions}
+
 Length style: {length_instruction}
 
 Instruction:
@@ -713,6 +1104,7 @@ Rules:
     db.close()
     return jsonify({"replies": replies})
 
+
 # ---------------------------------------
 # Reply from Text
 # ---------------------------------------
@@ -740,7 +1132,7 @@ def reply():
         return jsonify({"error": "Invalid JSON"}), 400
 
     conversation = data.get("conversation", [])
-    tone = data.get("tone", "Professional")
+    tone = data.get("tone", "Professional-Executive")
     rewrite_mode = data.get("rewrite", False)
     length = data.get("length", "Medium")
     facts = data.get("facts", "")
@@ -762,10 +1154,16 @@ def reply():
             "Respond as if you are the user, writing a single reply message."
         )
 
-    system_prompt = f"""
-You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+    # Build tone instructions
+    tone_instructions = build_tone_instructions(tone)
 
-Tone to use: {tone}
+    # Build system prompt
+    system_prompt = f"""
+You are ReplyHero, an AI assistant that helps users write clear, polished, and context-aware replies.
+
+Tone selected: {tone}
+{tone_instructions}
+
 Length style: {length_instruction}
 
 Instruction:
@@ -779,6 +1177,7 @@ Rules:
 - Do not mention that you are an AI.
 - Return only the reply text.
 """
+
     messages = [{"role": "system", "content": system_prompt}]
 
     for turn in conversation:
@@ -801,6 +1200,7 @@ Rules:
 
     db.close()
     return jsonify({"replies": replies})
+
 
 # ---------------------------------------
 # Create Stripe Checkout Session
