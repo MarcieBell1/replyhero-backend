@@ -622,6 +622,13 @@ Additional instructions:
         file_path = f"/tmp/uploaded_email{ext}"
         uploaded.save(file_path)
 
+        # ⭐ INSERT LOGGING HERE
+        logging.info(f"[upload] Uploaded filename: {uploaded.filename}")
+        logging.info(f"[upload] Browser MIME type: {mime}")
+        logging.info(f"[upload] Original extension: {original_ext}")
+        logging.info(f"[upload] Final extension used: {ext}")
+        logging.info(f"[upload] Saved to: {file_path}")
+
         extracted_text = extract_email_content(file_path)
 
         user_prompt = f"""
