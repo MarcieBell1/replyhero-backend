@@ -34,36 +34,58 @@ from PIL import Image
 from bs4 import BeautifulSoup
 
 
+import logging
+
+# Configure logging once (top of file)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
 def extract_email_content(file_path):
     ext = os.path.splitext(file_path)[1].lower()
+    logging.info(f"[extract_email_content] Starting parse. File: {file_path}, Ext: {ext}")
 
     # -----------------------------
     # .MSG (Outlook desktop)
     # -----------------------------
     if ext == ".msg":
+        logging.info("[extract_email_content] Detected .msg file")
         try:
             msg = extract_msg.Message(file_path)
+
             msg_subject = msg.subject or ""
             msg_body = ""
 
             if msg.htmlBody:
+                logging.info("[extract_email_content] Using HTML body from .msg")
                 msg_body = html_to_text(msg.htmlBody)
+
             elif msg.body:
+                logging.info("[extract_email_content] Using plain text body from .msg")
                 msg_body = msg.body
+
             elif msg.rtfBody:
-                # RTF conversion disabled (Render-safe)
+                logging.info("[extract_email_content] RTF body detected (ignored for Render safety)")
                 msg_body = ""
+
+            else:
+                logging.warning("[extract_email_content] .msg file has no readable body")
+                msg_body = ""
+
             msg_body = clean_forwarded(msg_body)
 
             return f"Subject: {msg_subject}\n\n{msg_body}".strip()
 
         except Exception as e:
+            logging.error(f"[extract_email_content] MSG parsing error: {e}")
             return f"[MSG parsing error: {str(e)}]"
 
     # -----------------------------
     # .EML
     # -----------------------------
     if ext == ".eml":
+        logging.info("[extract_email_content] Detected .eml file")
         try:
             with open(file_path, "rb") as f:
                 msg = email.message_from_binary_file(f, policy=email.policy.default)
@@ -75,36 +97,47 @@ def extract_email_content(file_path):
             return f"Subject: {subject}\n\n{body}".strip()
 
         except Exception as e:
+            logging.error(f"[extract_email_content] EML parsing error: {e}")
             return f"[EML parsing error: {str(e)}]"
 
     # -----------------------------
     # .PDF
     # -----------------------------
     if ext == ".pdf":
+        logging.info("[extract_email_content] Detected .pdf file")
         try:
             with pdfplumber.open(file_path) as pdf:
                 text = "\n".join(page.extract_text() or "" for page in pdf.pages)
             return text.strip()
         except Exception as e:
+            logging.error(f"[extract_email_content] PDF extraction error: {e}")
             return f"[PDF extraction error: {str(e)}]"
 
     # -----------------------------
     # .TXT
     # -----------------------------
     if ext == ".txt":
+        logging.info("[extract_email_content] Detected .txt file")
         try:
             with open(file_path, "r", errors="ignore") as f:
                 return f.read().strip()
         except Exception as e:
+            logging.error(f"[extract_email_content] TXT read error: {e}")
             return f"[TXT read error: {str(e)}]"
 
     # -----------------------------
-    # Images (Render-safe: no Tesseract)
+    # Images (Render-safe)
     # -----------------------------
     if ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]:
+        logging.info("[extract_email_content] Detected image file — OCR disabled")
         return "[Image OCR not supported in file uploads]"
 
+    # -----------------------------
+    # Unsupported
+    # -----------------------------
+    logging.warning(f"[extract_email_content] Unsupported file type: {ext}")
     return "[Unsupported file type]"
+
 
 # -----------------------------
 # Helper: HTML → Text
@@ -570,11 +603,19 @@ Additional instructions:
             "application/vnd.ms-outlook",
             "application/octet-stream",
             "application/x-msdownload",
-            "application/CDFV2-corrupt"
+            "application/CDFV2-corrupt",
+            "application/x-ole-storage"
         }
 
+        # Case 1: No extension but MIME matches Outlook
         if original_ext == "" and mime in msg_mime_types:
             ext = ".msg"
+
+        # Case 2: No extension but filename hints at Outlook
+        elif original_ext == "" and "msg" in uploaded.filename.lower():
+            ext = ".msg"
+
+        # Case 3: Normal case
         else:
             ext = original_ext
 
