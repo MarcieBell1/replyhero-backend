@@ -457,9 +457,6 @@ Rules:
 # ---------------------------------------
 # Unified Reply Endpoint (Text + Image + Modes)
 # ---------------------------------------
-# ---------------------------------------
-# Unified Reply Endpoint (Text + Image + Modes)
-# ---------------------------------------
 @app.route("/generate-reply", methods=["POST"])
 def generate_reply_unified():
     user = get_current_user()
@@ -555,7 +552,6 @@ Additional instructions:
 """
 
     # -----------------------------
-    # -----------------------------
     # MODE: Upload Email File
     # -----------------------------
     elif mode == "file":
@@ -564,17 +560,14 @@ Additional instructions:
 
         uploaded = request.files["file"]
 
-        # Detect extension safely
         original_ext = os.path.splitext(uploaded.filename)[1].lower()
         mime = uploaded.mimetype
 
-        # Fix: Render often strips extensions, so detect .msg by MIME
         if original_ext == "" and mime == "application/vnd.ms-outlook":
             ext = ".msg"
         else:
             ext = original_ext
 
-        # Build a safe temp path with correct extension
         file_path = f"/tmp/uploaded_email{ext}"
         uploaded.save(file_path)
 
@@ -589,38 +582,36 @@ Extracted text:
 Additional instructions:
 {include}
 """
-    # -----------------------------
-    # INVALID MODE
-    # -----------------------------
+
     else:
         return jsonify({"error": "Invalid mode"}), 400
 
-# -----------------------------
-# Tone, Length, Rewrite, Facts
-# -----------------------------
-tone = request.form.get("tone", "Professional")
-length = request.form.get("length", "Medium")
-rewrite_mode = request.form.get("rewrite", "false") == "true"
-facts = request.form.get("facts", "")
+    # -----------------------------
+    # Tone, Length, Rewrite, Facts
+    # -----------------------------
+    tone = request.form.get("tone", "Professional")
+    length = request.form.get("length", "Medium")
+    rewrite_mode = request.form.get("rewrite", "false") == "true"
+    facts = request.form.get("facts", "")
 
-length_instruction = {
-    "Short": "Keep the reply to 1 short sentence.",
-    "Medium": "Write a reply that is 2–3 sentences long.",
-    "Long": "Write a detailed reply that is 4–6 sentences long."
-}.get(length, "Write a concise reply.")
+    length_instruction = {
+        "Short": "Keep the reply to 1 short sentence.",
+        "Medium": "Write a reply that is 2–3 sentences long.",
+        "Long": "Write a detailed reply that is 4–6 sentences long."
+    }.get(length, "Write a concise reply.")
 
-if rewrite_mode:
-    user_instruction = (
-        "Rewrite the user's draft reply using the selected tone. "
-        "Keep the meaning the same but improve clarity, tone, and professionalism."
-    )
-else:
-    user_instruction = (
-        "Generate a polished reply to the conversation using the selected tone. "
-        "Respond as if you are the user, writing a single reply message."
-    )
+    if rewrite_mode:
+        user_instruction = (
+            "Rewrite the user's draft reply using the selected tone. "
+            "Keep the meaning the same but improve clarity, tone, and professionalism."
+        )
+    else:
+        user_instruction = (
+            "Generate a polished reply to the conversation using the selected tone. "
+            "Respond as if you are the user, writing a single reply message."
+        )
 
-system_prompt = f"""
+    system_prompt = f"""
 You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
 
 Tone to use: {tone}
@@ -638,34 +629,8 @@ Rules:
 - Return only the reply text.
 """
 
-# -----------------------------
-# Generate reply (ALL MODES)
-# -----------------------------
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": user_prompt}
-]
-
-try:
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.7,
-        n=3
-    )
-    replies = [c.message.content.strip() for c in completion.choices]
-except Exception as e:
-    return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
-
-if user.plan == "free":
-    user.free_uses += 1
-    db.commit()
-
-db.close()
-return jsonify({"replies": replies})
-
     # -----------------------------
-    # Generate reply
+    # Generate reply (ALL MODES)
     # -----------------------------
     messages = [
         {"role": "system", "content": system_prompt},
@@ -673,6 +638,32 @@ return jsonify({"replies": replies})
     ]
 
     try:
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+            n=3
+        )
+        replies = [c.message.content.strip() for c in completion.choices]
+    except Exception as e:
+        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+
+    if user.plan == "free":
+        user.free_uses += 1
+        db.commit()
+
+    db.close()
+    return jsonify({"replies": replies})
+
+# -----------------------------
+# Generate reply
+# -----------------------------
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": user_prompt}
+]
+
+try:
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
