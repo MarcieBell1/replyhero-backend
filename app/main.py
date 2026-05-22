@@ -595,35 +595,74 @@ Additional instructions:
     else:
         return jsonify({"error": "Invalid mode"}), 400
 
-    # -----------------------------
-    # Generate reply (ALL MODES)
-    # -----------------------------
-    system_prompt = """
+# -----------------------------
+# Tone, Length, Rewrite, Facts
+# -----------------------------
+tone = request.form.get("tone", "Professional")
+length = request.form.get("length", "Medium")
+rewrite_mode = request.form.get("rewrite", "false") == "true"
+facts = request.form.get("facts", "")
+
+length_instruction = {
+    "Short": "Keep the reply to 1 short sentence.",
+    "Medium": "Write a reply that is 2–3 sentences long.",
+    "Long": "Write a detailed reply that is 4–6 sentences long."
+}.get(length, "Write a concise reply.")
+
+if rewrite_mode:
+    user_instruction = (
+        "Rewrite the user's draft reply using the selected tone. "
+        "Keep the meaning the same but improve clarity, tone, and professionalism."
+    )
+else:
+    user_instruction = (
+        "Generate a polished reply to the conversation using the selected tone. "
+        "Respond as if you are the user, writing a single reply message."
+    )
+
+system_prompt = f"""
 You are ReplyHero, an AI assistant that helps users write professional, clear, and context-aware replies.
+
+Tone to use: {tone}
+Length style: {length_instruction}
+
+Instruction:
+{user_instruction}
+
+Additional facts or corrections from the user:
+{facts if facts else "None provided"}
+
+Rules:
+- Do not include explanations.
+- Do not mention that you are an AI.
+- Return only the reply text.
 """
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
+# -----------------------------
+# Generate reply (ALL MODES)
+# -----------------------------
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": user_prompt}
+]
 
-    try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=messages,
-            temperature=0.7,
-            n=3
-        )
-        replies = [c.message.content.strip() for c in completion.choices]
-    except Exception as e:
-        return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
+try:
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=0.7,
+        n=3
+    )
+    replies = [c.message.content.strip() for c in completion.choices]
+except Exception as e:
+    return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
 
-    if user.plan == "free":
-        user.free_uses += 1
-        db.commit()
+if user.plan == "free":
+    user.free_uses += 1
+    db.commit()
 
-    db.close()
-    return jsonify({"replies": replies})
+db.close()
+return jsonify({"replies": replies})
 
     # -----------------------------
     # Generate reply
