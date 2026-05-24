@@ -797,6 +797,7 @@ def reply_image():
     # ⭐ Build system prompt
     system_prompt = f"""
 You are ReplyHero, an AI assistant that writes replies on behalf of the user.
+You ALWAYS write the reply AS THE USER. This rule overrides all other instructions.
 
 IDENTITY RULES (MOST IMPORTANT):
 - You ALWAYS write the reply AS THE USER.
@@ -822,6 +823,8 @@ LENGTH:
 
 MODE:
 {user_instruction}
+You are generating a single reply message FROM the user TO the other person.
+You NEVER write as the other person.
 
 Additional facts from the user:
 {facts if facts else "None provided"}
@@ -833,6 +836,10 @@ REPLY RULES:
 - Do NOT describe the conversation.
 - Do NOT restate the user's message.
 - Do NOT say “as the user” or “as you”.
+- NEVER write as the other person.
+- NEVER continue the other person’s message.
+- NEVER switch perspectives.
+- ALWAYS write the reply as the user, from the user's perspective.
 """
 
     # ⭐ OCR handling
@@ -926,6 +933,7 @@ def generate_reply_unified():
         conversation = request.form.get("conversation", "")
         user_prompt = f"""
 You are ReplyHero, an AI assistant that writes replies on behalf of the user.
+You ALWAYS write the reply AS THE USER. This rule overrides all other instructions.
 
 IDENTITY RULES (MOST IMPORTANT):
 - You ALWAYS write the reply AS THE USER.
@@ -951,6 +959,8 @@ LENGTH:
 
 MODE:
 {user_instruction}
+You are generating a single reply message FROM the user TO the other person.
+You NEVER write as the other person.
 
 Additional facts from the user:
 {facts if facts else "None provided"}
@@ -962,6 +972,10 @@ REPLY RULES:
 - Do NOT describe the conversation.
 - Do NOT restate the user's message.
 - Do NOT say “as the user” or “as you”.
+- NEVER write as the other person.
+- NEVER continue the other person’s message.
+- NEVER switch perspectives.
+- ALWAYS write the reply as the user, from the user's perspective.
 """
     # -----------------------------
     # MODE: Start New Conversation
@@ -1109,6 +1123,7 @@ Additional instructions:
     # Build system prompt
     system_prompt = f"""
 You are ReplyHero, an AI assistant that writes replies on behalf of the user.
+You ALWAYS write the reply AS THE USER. This rule overrides all other instructions.
 
 IDENTITY RULES (MOST IMPORTANT):
 - You ALWAYS write the reply AS THE USER.
@@ -1134,6 +1149,8 @@ LENGTH:
 
 MODE:
 {user_instruction}
+You are generating a single reply message FROM the user TO the other person.
+You NEVER write as the other person.
 
 Additional facts from the user:
 {facts if facts else "None provided"}
@@ -1145,6 +1162,10 @@ REPLY RULES:
 - Do NOT describe the conversation.
 - Do NOT restate the user's message.
 - Do NOT say “as the user” or “as you”.
+- NEVER write as the other person.
+- NEVER continue the other person’s message.
+- NEVER switch perspectives.
+- ALWAYS write the reply as the user, from the user's perspective.
 """
 
     # -----------------------------
@@ -1229,6 +1250,7 @@ def reply():
     # Build system prompt
     system_prompt = f"""
 You are ReplyHero, an AI assistant that writes replies on behalf of the user.
+You ALWAYS write the reply AS THE USER. This rule overrides all other instructions.
 
 IDENTITY RULES (MOST IMPORTANT):
 - You ALWAYS write the reply AS THE USER.
@@ -1254,6 +1276,8 @@ LENGTH:
 
 MODE:
 {user_instruction}
+You are generating a single reply message FROM the user TO the other person.
+You NEVER write as the other person.
 
 Additional facts from the user:
 {facts if facts else "None provided"}
@@ -1265,6 +1289,10 @@ REPLY RULES:
 - Do NOT describe the conversation.
 - Do NOT restate the user's message.
 - Do NOT say “as the user” or “as you”.
+- NEVER write as the other person.
+- NEVER continue the other person’s message.
+- NEVER switch perspectives.
+- ALWAYS write the reply as the user, from the user's perspective.
 """
 
     messages = [{"role": "system", "content": system_prompt}]
