@@ -814,6 +814,7 @@ Rules:
 - Do not mention that you are an AI.
 - If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
+- If the input comes from a screenshot or extracted text, assume the user is the person whose messages appear on the RIGHT side of the conversation. Always generate the reply from their perspective.
 """
 
     # ⭐ OCR handling
@@ -1078,6 +1079,7 @@ Rules:
 - Do not mention that you are an AI.
 - If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
+- If the input comes from a screenshot or extracted text, assume the user is the person whose messages appear on the RIGHT side of the conversation. Always generate the reply from their perspective.
 """
 
     # -----------------------------
@@ -1179,6 +1181,7 @@ Rules:
 - Do not mention that you are an AI.
 - If the user provides team allegiance, political stance, or personal identity in the facts, treat that as the user's true perspective and write the reply from that viewpoint.
 - Return only the reply text.
+- If the input comes from a screenshot or extracted text, assume the user is the person whose messages appear on the RIGHT side of the conversation. Always generate the reply from their perspective.
 """
 
     messages = [{"role": "system", "content": system_prompt}]
