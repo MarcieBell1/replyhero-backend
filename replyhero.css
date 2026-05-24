@@ -567,6 +567,20 @@ select {
     background: #007bff;
     color: white;
   }
+
+  /* ⭐ MODE SELECTOR — MOBILE WRAP FIX */
+  .mode-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .mode-tabs button {
+    flex: 1 1 48%; /* Two buttons per row on mobile */
+    text-align: center;
+  }
+
 /* ============================
    ⭐ DESKTOP UPGRADE
    ============================ */
