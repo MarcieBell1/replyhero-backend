@@ -930,53 +930,26 @@ def generate_reply_unified():
     # MODE: Paste Existing Conversation
     # -----------------------------
     if mode == "paste":
-        conversation = request.form.get("conversation", "")
+        conversation = request.form.get("conversation", "").strip()
+
         user_prompt = f"""
-You are ReplyHero, an AI assistant that writes replies on behalf of the user.
-You ALWAYS write the reply AS THE USER. This rule overrides all other instructions.
+The user pasted a conversation. Treat ALL pasted text as messages from the OTHER PERSON.
 
-IDENTITY RULES (MOST IMPORTANT):
-- You ALWAYS write the reply AS THE USER.
-- You NEVER write as the other person.
-- You NEVER continue the other person’s message.
-- You NEVER switch perspectives unless explicitly told in 'facts'.
+You are generating a reply FROM the user TO the other person.
 
-SCREENSHOT RULE:
-If the input comes from a screenshot or extracted text:
-- Messages on the RIGHT side belong to the user.
-- Messages on the LEFT side belong to the other person.
-Generate the reply AS the right‑side person, replying TO the left‑side person.
-
-FACT OVERRIDE:
-If the user provides additional facts, corrections, or identity details, those ALWAYS override the conversation and define the user's true perspective.
-
-TONE:
-Tone selected: {tone}
-{tone_instructions}
-
-LENGTH:
-{length_instruction}
-
-MODE:
-{user_instruction}
-You are generating a single reply message FROM the user TO the other person.
-You NEVER write as the other person.
-
-Additional facts from the user:
-{facts if facts else "None provided"}
-
-REPLY RULES:
-- Return ONLY the reply text.
-- Do NOT include explanations.
-- Do NOT mention that you are an AI.
-- Do NOT describe the conversation.
-- Do NOT restate the user's message.
-- Do NOT say “as the user” or “as you”.
+Your job:
+- Generate a single reply FROM the user TO the other person.
 - NEVER write as the other person.
 - NEVER continue the other person’s message.
-- NEVER switch perspectives.
-- ALWAYS write the reply as the user, from the user's perspective.
+- ALWAYS write the reply as the user.
+
+Conversation pasted by the user:
+{conversation}
+
+Additional instructions:
+{include}
 """
+
     # -----------------------------
     # MODE: Start New Conversation
     # -----------------------------
