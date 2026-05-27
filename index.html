@@ -82,8 +82,8 @@
         <div>
           <div class="mode-label">Mode</div>
           <div class="mode-tabs" id="modeTabs">
-            <button data-mode="paste" class="active">Paste Conversation</button>
-            <button data-mode="start">Start New</button>
+            <button data-mode="paste" class="active">Reply to Conversation</button>
+            <button data-mode="start">Rewrite for me</button>
             <button data-mode="upload">Upload Screenshot</button>
             <button data-mode="file">Upload Email File</button>
           </div>
@@ -209,6 +209,8 @@
       </div>
 
 <script>
+let currentUser = null;
+
 const API_BASE = "https://api.reply-hero.com";
 
 /* ---------------------------
@@ -227,8 +229,8 @@ async function loadUser() {
 
 /* Run on page load */
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = await loadUser();
-  updateUI(user);
+  currentUser = await loadUser();
+  updateUI(currentUser);
 });
 
 function updateUI(user) {
@@ -239,46 +241,45 @@ function updateUI(user) {
   const freeCount = document.getElementById("freeCount");
 
   // Not logged in
-  if (!user.logged_in) {
+  if (!user || !user.logged_in) {
     loginBar.style.display = "flex";
     upgradeBtn.style.display = "none";
     proBadge.style.display = "none";
     freeMessage.style.display = "none";
-
-    // ⭐ Hide Manage Subscription
     document.getElementById("manageBillingBtn").style.display = "none";
-
     return;
   }
 
-  // Logged in → hide login bar
+  // Logged in
   loginBar.style.display = "none";
 
-  // FREE PLAN
-if (user.plan === "free") {
-  upgradeBtn.style.display = "inline-block";
-  proBadge.style.display = "none";
-
-  freeMessage.style.display = "block";
-  const remaining = 15 - (user.free_uses || 0);
-  freeCount.textContent = remaining;
-
-  // Disable generate button if limit reached
-  if (remaining <= 0) {
-    generateBtn.disabled = true;
-    generateBtn.textContent = "Limit reached";
-    generateBtn.style.opacity = "0.5";
-  } else {
-    generateBtn.disabled = false;
-    generateBtn.textContent = "Generate Reply";
-    generateBtn.style.opacity = "1";
+  // If plan is missing, treat as free (safe fallback)
+  if (!user.plan) {
+    user.plan = "free";
   }
 
-  // ⭐ Hide Manage Subscription for FREE users
-  document.getElementById("manageBillingBtn").style.display = "none";
+  // FREE PLAN
+  if (user.plan === "free") {
+    upgradeBtn.style.display = "inline-block";
+    proBadge.style.display = "none";
 
-  return;
-}
+    freeMessage.style.display = "block";
+    const remaining = 15 - (user.free_uses || 0);
+    freeCount.textContent = remaining;
+
+    if (remaining <= 0) {
+      generateBtn.disabled = true;
+      generateBtn.textContent = "Free Limit reached, You must Upgrade to Pro at $4.99/month, cancel anytime.";
+      generateBtn.style.opacity = "0.5";
+    } else {
+      generateBtn.disabled = false;
+      generateBtn.textContent = "Generate Reply";
+      generateBtn.style.opacity = "1";
+    }
+
+    document.getElementById("manageBillingBtn").style.display = "none";
+    return;
+  }
 
   // PRO PLAN
   if (user.plan === "pro") {
@@ -290,10 +291,10 @@ if (user.plan === "free") {
     generateBtn.textContent = "Generate Reply";
     generateBtn.style.opacity = "1";
 
-    // ⭐ Show Manage Subscription button
     document.getElementById("manageBillingBtn").style.display = "inline-block";
   }
 }
+
 
 /* ---------------------------
    AUTH: SIGNUP + LOGIN
@@ -540,6 +541,12 @@ async function generateReplies() {
     }
 
     const data = await res.json();
+
+    /* ⭐ Update free_uses in UI if backend returned it */
+    if (data.free_uses !== undefined && currentUser) {
+      currentUser.free_uses = data.free_uses;
+      updateUI(currentUser);
+    }
 
     if (!data.replies) {
       outputEl.innerHTML = `

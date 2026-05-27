@@ -1157,16 +1157,25 @@ REPLY RULES:
             n=3
         )
         replies = [c.message.content.strip() for c in completion.choices]
+        # ⭐ Update free usage
+        db = SessionLocal()
+        user_db = db.get(User, user.id)
+
+        if user_db.plan == "free":
+            user_db.free_uses += 1
+            db.commit()
+
+        updated_free_uses = user_db.free_uses
+        db.close()
+
+        # ⭐ Return replies + updated free_uses
+        return jsonify({
+            "replies": replies,
+            "free_uses": updated_free_uses
+        })
+
     except Exception as e:
         return jsonify({"error": "Reply generation failed", "details": str(e)}), 500
-
-    if user.plan == "free":
-        user.free_uses += 1
-        db.commit()
-
-    db.close()
-    return jsonify({"replies": replies})
-
 
 # ---------------------------------------
 # Reply from Text
